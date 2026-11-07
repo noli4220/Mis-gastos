@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f2e35">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mis gastos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<title>Mis gastos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+/* Layout: one phone column. Weekly "wallet" up top, quick-add in the middle, the week's log below. */
+:root{
+  --bg:#eef5f2; --surface:#ffffff; --ink:#0f2e35; --muted:#58726f; --line:#d3e3de;
+  --accent:#e0457b; --accent-ink:#ffffff; --sea:#127c78; --sea-soft:#d6efe9;
+  --warn:#c77700; --bad:#c2334d; --good:#127c78;
+  --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body:"Figtree", -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1d21; --surface:#12292e; --ink:#e6f2ef; --muted:#93b0ab; --line:#24434a;
+  --accent:#ff6b9a; --accent-ink:#1a0710; --sea:#4fd1c0; --sea-soft:#163d3d;
+  --warn:#f0a83a; --bad:#ff7088; --good:#4fd1c0; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0b1d21; --surface:#12292e; --ink:#e6f2ef; --muted:#93b0ab; --line:#24434a;
+  --accent:#ff6b9a; --accent-ink:#1a0710; --sea:#4fd1c0; --sea-soft:#163d3d;
+  --warn:#f0a83a; --bad:#ff7088; --good:#4fd1c0; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 48px}
+.wrap{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2{font-family:var(--display);margin:0;text-wrap:balance}
+.num{font-variant-numeric:tabular-nums}
+header.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+header.top h1{font-size:1.35rem;font-weight:800;letter-spacing:-.01em}
+.week-label{color:var(--muted);font-size:.9rem}
+.status{font-size:.82rem;color:var(--muted)}
+.status[data-kind="warn"]{color:var(--warn)}
+
+/* wallet */
+.wallet{background:var(--ink);color:var(--bg);border-radius:22px;padding:20px 20px 18px;display:flex;flex-direction:column;gap:10px}
+.wallet .eyebrow{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.wallet .big{font-family:var(--display);font-weight:800;font-size:3.1rem;line-height:1;letter-spacing:-.02em}
+.wallet .big.neg{color:var(--accent)}
+.wallet .sub{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.92rem;opacity:.9}
+.meter{height:10px;border-radius:99px;background:color-mix(in srgb,var(--bg) 22%,transparent);overflow:hidden}
+.meter>i{display:block;height:100%;background:var(--sea);border-radius:99px;transition:width .4s}
+.meter>i.over{background:var(--accent)}
+@media (prefers-reduced-motion:reduce){.meter>i{transition:none}}
+
+/* today pill */
+.today{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;flex-wrap:wrap}
+.today .msg{font-weight:600}
+.today .msg small{display:block;font-weight:400;color:var(--muted);font-size:.85rem}
+.chip-ok{background:var(--sea-soft);color:var(--sea);font-weight:700;border-radius:99px;padding:4px 10px;font-size:.85rem}
+
+/* add form */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.card h2{font-size:1.1rem;font-weight:600}
+.amount-row{display:flex;align-items:center;gap:6px;border-bottom:2px solid var(--line);padding-bottom:6px}
+.amount-row:focus-within{border-color:var(--accent)}
+.amount-row span{font-family:var(--display);font-size:2.2rem;color:var(--muted)}
+#amount{font-family:var(--display);font-size:2.4rem;font-weight:800;border:0;background:transparent;color:var(--ink);width:100%;min-width:0;outline:none;font-variant-numeric:tabular-nums}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.cat{border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:12px;padding:10px 10px;font:inherit;font-size:.92rem;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:1px}
+.cat small{color:var(--muted);font-size:.78rem}
+.cat[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.cat:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--sea);outline-offset:2px}
+.row2{display:flex;gap:8px;flex-wrap:wrap}
+#note,#date{font:inherit;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:transparent;color:var(--ink);min-width:0}
+#note{flex:1 1 180px}
+#date{flex:0 1 160px}
+.btn{font:inherit;font-weight:700;border:0;border-radius:14px;padding:14px 16px;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink);font-size:1.05rem}
+.btn.primary:disabled{opacity:.45;cursor:default}
+.btn.ghost{background:transparent;color:var(--sea);border:1.5px solid var(--sea);padding:9px 12px;font-size:.9rem}
+.btn.small{padding:6px 10px;font-size:.82rem;border-radius:10px}
+.form-msg{min-height:1.2em;font-size:.88rem;color:var(--sea);margin:-4px 0 0}
+.form-msg.err{color:var(--bad)}
+
+/* categories */
+.catlist{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}
+.catlist li{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:baseline}
+.catlist .name{font-weight:600}
+.catlist .vals{font-size:.88rem;color:var(--muted)}
+.catlist .vals b{color:var(--ink)}
+.catlist .vals.over b{color:var(--bad)}
+.bar{grid-column:1/-1;height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--sea)}
+.bar>i.warn{background:var(--warn)} .bar>i.over{background:var(--bad)}
+
+/* log */
+.day h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 6px;display:flex;justify-content:space-between}
+.day ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.entry{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.entry .what{min-width:0}
+.entry .what div{font-weight:600}
+.entry .what small{color:var(--muted);overflow-wrap:anywhere}
+.entry .amt{font-weight:700}
+.x{background:transparent;border:0;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:4px 8px;border-radius:8px}
+.confirm{display:flex;gap:6px}
+.btn.danger{background:var(--bad);color:#fff}
+.empty{color:var(--muted);font-size:.95rem;margin:0}
+.days{display:flex;flex-direction:column;gap:16px}
+
+details.card summary{cursor:pointer;font-family:var(--display);font-weight:600;font-size:1.1rem;list-style:none}
+details.card summary::after{content:" ▾";color:var(--muted)}
+details[open].card summary::after{content:" ▴"}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:right;padding:6px 4px;border-top:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;border-top:0}
+td.pos{color:var(--good)} td.neg{color:var(--bad)}
+.field{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted);flex:1 1 140px;min-width:0}
+.field input{font:inherit;font-size:1.1rem;font-weight:700;color:var(--ink);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:transparent;min-width:0;font-variant-numeric:tabular-nums}
+.help{font-size:.9rem;color:var(--muted);margin:0}
+.save-pill{display:inline-block;background:color-mix(in srgb,var(--sea) 30%,transparent);border-radius:99px;padding:2px 10px}
+.foot{font-size:.82rem;color:var(--muted);text-align:center}
+.notif-code{font-family:ui-monospace,Menlo,monospace;font-size:.72rem;width:100%;min-height:90px;border:1.5px solid var(--line);border-radius:10px;padding:8px;background:transparent;color:var(--ink);resize:vertical}
+.help{font-size:.9rem;color:var(--muted);margin:0}
+.help b{color:var(--ink)}
+.stack{display:flex;flex-direction:column;gap:10px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Mi mes</h1>
+    <span class="week-label num" id="weekLabel"></span>
+  </header>
+  
+  <section class="wallet" aria-label="Lo que te queda este mes">
+    <span class="eyebrow">Te queda este mes</span>
+    <span class="big num" id="left">$330.00</span>
+    <div class="meter" aria-hidden="true"><i id="meter" style="width:0%"></i></div>
+    <div class="sub num">
+      <span id="spentTxt">Gastado: $0.00 de $330.00</span>
+      <span id="carryTxt"></span>
+      <span id="perDay"></span>
+    </div>
+  </section>
+
+  <section class="today" aria-live="polite">
+    <div class="msg" id="todayMsg">¿Ya anotaste lo de hoy?<small id="streak"></small></div>
+    <div id="todayAction"><button class="btn ghost" id="noSpend" type="button">Hoy no gasté nada</button></div>
+  </section>
+
+  <form class="card" id="addForm" autocomplete="off">
+    <h2>Anotar un gasto</h2>
+    <label class="amount-row" for="amount"><span>$</span>
+      <input id="amount" inputmode="decimal" placeholder="0.00" aria-label="Cuánto gastaste">
+    </label>
+    <div class="cats" id="cats" role="group" aria-label="Categoría"></div>
+    <div class="row2">
+      <input id="note" placeholder="¿En qué? (opcional)" maxlength="60" aria-label="Nota">
+      <input id="date" type="date" aria-label="Fecha">
+    </div>
+    <button class="btn primary" id="save" type="submit" disabled>Guardar gasto</button>
+    <p class="form-msg" id="formMsg" role="status"></p>
+  </form>
+
+  <section class="card" aria-labelledby="catsTitle">
+    <h2 id="catsTitle">Por categoría</h2>
+    <ul class="catlist" id="catList"></ul>
+  </section>
+
+  <section class="card" aria-labelledby="planTitle">
+    <h2 id="planTitle">Mi plan</h2>
+    <div class="row2">
+      <label class="field" for="planMonthly">Me dan al mes<input id="planMonthly" inputmode="decimal" value="350"></label>
+      <label class="field" for="planSavings">Quiero ahorrar<input id="planSavings" inputmode="decimal" value="20"></label>
+    </div>
+    <p class="help" id="planHelp"></p>
+    <button class="btn ghost" id="planSave" type="button">Guardar mi plan</button>
+    <p class="form-msg" id="planMsg" role="status"></p>
+  </section>
+
+  <section class="card" aria-labelledby="logTitle">
+    <h2 id="logTitle">Gastos de este mes</h2>
+    <div class="days" id="days"></div>
+  </section>
+
+  <section class="card" id="notifCard" aria-labelledby="notifTitle">
+    <h2 id="notifTitle">Avisos 3 veces al día</h2>
+    <div class="stack" id="notifBody">
+      <p class="help" id="notifHelp">Te aviso a la 1:00 pm, 6:00 pm y 9:30 pm para que anotes tus gastos.</p>
+      <button class="btn primary" id="notifBtn" type="button">Activar avisos</button>
+      <div id="notifCodeBox" class="stack" hidden>
+        <p class="help"><b>Último paso:</b> copia este código y mándaselo a Claude en el chat. Con eso empiezan a llegarte los avisos.</p>
+        <textarea class="notif-code" id="notifCode" readonly></textarea>
+        <button class="btn ghost" id="copyCode" type="button">Copiar código</button>
+      </div>
+    </div>
+  </section>
+
+  <details class="card" id="backup">
+    <summary>Copia de seguridad</summary>
+    <div class="stack">
+      <p class="help">Tus gastos se guardan en este teléfono. Si vas a borrar la app o cambiar de celular, copia este texto y guárdalo (por ejemplo en Notas). Para recuperarlo, pégalo aquí y toca Restaurar.</p>
+      <textarea class="notif-code" id="backupText" aria-label="Texto de la copia de seguridad"></textarea>
+      <div class="row2"><button class="btn ghost" id="backupCopy" type="button">Copiar mis datos</button><button class="btn ghost" id="backupRestore" type="button">Restaurar</button></div>
+      <p class="form-msg" id="backupMsg" role="status"></p>
+    </div>
+  </details>
+
+  <details class="card" id="history">
+    <summary>Meses anteriores</summary>
+    <div id="histBody"></div>
+  </details>
+
+  <p class="foot">Tu mes va del 7 al 6 del mes siguiente. Lo que te sobre al final del mes se suma a tu ahorro.</p>
+</div>
+
+<script>
+(function(){
+const CATS = [
+  {id:"super",  name:"Supermercado",     w:120},
+  {id:"campus", name:"Comida en campus", w:100},
+  {id:"uber",   name:"Uber del finde",   w:50},
+  {id:"gustos", name:"Gustos y salidas", w:38},
+  {id:"subs",   name:"Suscripciones",    w:22, fixed:true},
+];
+const catById = Object.fromEntries(CATS.map(c=>[c.id,c]));
+const DAYS = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+const MONTHS = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+
+const $ = id => document.getElementById(id);
+const money = n => (n<0?"-":"")+"$"+Math.abs(n).toFixed(2);
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parse = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+const addDays = (s,n) => { const d=parse(s); d.setDate(d.getDate()+n); return ymd(d); };
+const mondayOf = s => { const d=parse(s); const k=(d.getDay()+6)%7; d.setDate(d.getDate()-k); return ymd(d); };
+const cycleStart = s => { const d=parse(s), day=plan.cycleDay; const st = d.getDate()>=day ? new Date(d.getFullYear(), d.getMonth(), day) : new Date(d.getFullYear(), d.getMonth()-1, day); return ymd(st); };
+const nextCycle = s => { const d=parse(s); return ymd(new Date(d.getFullYear(), d.getMonth()+1, d.getDate())); };
+const cycleEnd = s => addDays(nextCycle(s), -1);
+const nice = s => { const d=parse(s); return d.getDate()+" "+MONTHS[d.getMonth()]; };
+const todayStr = () => ymd(new Date());
+
+// ---------- state ----------
+let expenses = [];   // {id, amount, cat, note, date, ts}
+let marks = {};      // date -> true (día sin gastos)
+let startCycle = null;
+let plan = {monthly:350, savings:20, cycleDay:7};
+let selectedCat = null;
+let pendingDelete = null;
+let store = null;
+
+// ---------- storage: db when available, this phone otherwise ----------
+const LS = "misgastos-v1";
+const VAPID = "BPSDKyAyopyGkutft2CAOQhsGaTwFtJ7PVoXjAbtt53kZ2sQD6jGEX15HHqma8pPbbHE-lyGlu6H31LXRoQT08U";
+function localLoad(){ try{ const j=JSON.parse(localStorage.getItem(LS)||"{}"); return j; }catch(e){ return {}; } }
+function localSave(){ try{ localStorage.setItem(LS, JSON.stringify({expenses, marks, startCycle, plan})); }catch(e){} }
+
+
+function useLocal(){
+  const j = localLoad();
+  expenses = j.expenses||[]; marks = j.marks||{}; if(j.plan) plan = Object.assign({}, plan, j.plan); startCycle = j.startCycle||cycleStart(todayStr());
+  store = {
+    kind:"local",
+    add: async e => { expenses.push(e); localSave(); render(); },
+    del: async id => { expenses = expenses.filter(x=>x.id!==id); localSave(); render(); },
+    mark: async d => { marks[d]=true; localSave(); render(); },
+    unmark: async d => { delete marks[d]; localSave(); render(); },
+    setStart: async w => { startCycle=w; localSave(); render(); },
+    setPlan: async p => { plan=p; localSave(); render(); },
+  };
+  localSave();
+  render();
+}
+
+function boot(){ useLocal(); }
+
+// ---------- calculations ----------
+function spendable(){ return Math.max(0, plan.monthly - plan.savings); }
+function catBudget(c){
+  const avail = spendable(), fixedTotal = CATS.filter(x=>x.fixed).reduce((a,x)=>a+x.w,0);
+  if(c.fixed) return Math.min(c.w, avail);
+  const flexTotal = CATS.filter(x=>!x.fixed).reduce((a,x)=>a+x.w,0);
+  return Math.floor(Math.max(0, avail-fixedTotal)*c.w/flexTotal);
+}
+function cycleSpent(s){ const end=cycleEnd(s); return expenses.filter(e=>e.date>=s && e.date<=end).reduce((a,e)=>a+e.amount,0); }
+function pastCycles(cur){ const out=[]; if(!startCycle) return out; for(let x=startCycle; x<cur; x=nextCycle(x)) out.push(x); return out; }
+function totalSaved(cur){ return pastCycles(cur).reduce((a,x)=>a + plan.savings + (spendable()-cycleSpent(x)), 0); }
+function loggedOn(d){ return !!marks[d] || expenses.some(e=>e.date===d); }
+function streak(){
+  let d = todayStr(); if(!loggedOn(d)) d = addDays(d,-1);
+  let n=0; while(loggedOn(d) && n<400){ n++; d=addDays(d,-1); }
+  return n;
+}
+
+// ---------- render ----------
+function render(){
+  const today = todayStr(), w = cycleStart(today), end = cycleEnd(w);
+  $("weekLabel").textContent = nice(w)+" – "+nice(end);
+  const avail = spendable(), spent = cycleSpent(w), left = avail - spent;
+  const leftEl = $("left"); leftEl.textContent = money(left); leftEl.classList.toggle("neg", left<0);
+  const pct = avail>0 ? Math.min(100, spent/avail*100) : 100;
+  const m = $("meter"); m.style.width = pct+"%"; m.classList.toggle("over", spent>avail);
+  $("spentTxt").textContent = "Gastado: "+money(spent)+" de "+money(avail);
+  const saved = totalSaved(w);
+  $("carryTxt").innerHTML = '<span class="save-pill">Ahorro: '+money(plan.savings)+' apartado este mes'+(pastCycles(w).length?' · '+money(saved)+' ahorrado en total':'')+'</span>';
+  const daysLeft = Math.round((parse(end)-parse(today))/864e5)+1;
+  $("perDay").textContent = left>0 ? "≈ "+money(left/daysLeft)+" por día ("+daysLeft+(daysLeft===1?" día":" días")+" hasta el "+nice(end)+")" : left<0 ? "Te pasaste este mes" : "";
+  CATS.forEach(c=>{ const el=document.querySelector("#cat-"+c.id+" small"); if(el) el.textContent=money(catBudget(c))+" / mes"; });
+  $("planHelp").textContent = "Puedes gastar "+money(avail)+" al mes. Lo que te sobre al final también se va a tu ahorro.";
+
+  // today
+  const has = loggedOn(today), s = streak();
+  const msg = $("todayMsg"), act = $("todayAction");
+  const st = s>0 ? "Racha: "+s+(s===1?" día":" días")+" anotando seguido" : "Anota algo hoy para empezar tu racha";
+  if(has){
+    const n = expenses.filter(e=>e.date===today).length;
+    msg.firstChild.textContent = n ? "Listo, hoy anotaste "+n+(n===1?" gasto":" gastos")+"." : "Listo, hoy no gastaste nada.";
+    act.innerHTML = marks[today] && !n ? '<button class="btn ghost small" id="undoNo" type="button">Deshacer</button>' : '<span class="chip-ok">Hoy ✓</span>';
+    const u=$("undoNo"); if(u) u.onclick=()=>store&&store.unmark(today);
+  } else {
+    msg.firstChild.textContent = "¿Ya anotaste lo de hoy?";
+    act.innerHTML = '<button class="btn ghost" id="noSpend" type="button">Hoy no gasté nada</button>';
+    $("noSpend").onclick=()=>store&&store.mark(today);
+  }
+  $("streak").textContent = st;
+
+  // categories
+  const ul = $("catList"); ul.innerHTML="";
+  CATS.forEach(c=>{
+    const sp = expenses.filter(e=>e.cat===c.id && e.date>=w && e.date<=end).reduce((a,e)=>a+e.amount,0);
+    const b = catBudget(c), r = b>0 ? sp/b : (sp>0?2:0), li=document.createElement("li");
+    const cls = r>1?"over":r>=.8?"warn":"";
+    li.innerHTML = '<span class="name"></span><span class="vals num '+(r>1?"over":"")+'"><b>'+money(sp)+'</b> de '+money(b)+'</span><div class="bar"><i class="'+cls+'" style="width:'+Math.min(100,r*100)+'%"></i></div>';
+    li.querySelector(".name").textContent=c.name; ul.appendChild(li);
+  });
+
+  // log
+  const box = $("days"); box.innerHTML="";
+  const wk = expenses.filter(e=>e.date>=w && e.date<=end).sort((a,b)=> b.date.localeCompare(a.date) || (b.ts||0)-(a.ts||0));
+  if(!wk.length){ box.innerHTML='<p class="empty">Todavía no hay gastos este mes. Anota el primero arriba: el monto, la categoría y listo.</p>'; }
+  const byDay = {}; wk.forEach(e=>{ (byDay[e.date]=byDay[e.date]||[]).push(e); });
+  Object.keys(byDay).sort().reverse().forEach(d=>{
+    const sec=document.createElement("div"); sec.className="day";
+    const tot=byDay[d].reduce((a,e)=>a+e.amount,0), dd=parse(d);
+    sec.innerHTML='<h3><span>'+(d===today?"Hoy":DAYS[dd.getDay()]+" "+nice(d))+'</span><span class="num">'+money(tot)+'</span></h3><ul></ul>';
+    const list=sec.querySelector("ul");
+    byDay[d].forEach(e=>{
+      const li=document.createElement("li"); li.className="entry";
+      const what=document.createElement("div"); what.className="what";
+      const t=document.createElement("div"); t.textContent=(catById[e.cat]||{name:"Otro"}).name;
+      what.appendChild(t);
+      if(e.note){ const n=document.createElement("small"); n.textContent=e.note; what.appendChild(n); }
+      const a=document.createElement("span"); a.className="amt num"; a.textContent=money(e.amount);
+      li.append(what,a);
+      if(pendingDelete===e.id){
+        const c=document.createElement("div"); c.className="confirm";
+        c.innerHTML='<button class="btn danger small" type="button">Borrar</button><button class="btn ghost small" type="button">No</button>';
+        c.children[0].onclick=()=>{ pendingDelete=null; store&&store.del(e.id); };
+        c.children[1].onclick=()=>{ pendingDelete=null; render(); };
+        li.appendChild(c);
+      } else {
+        const x=document.createElement("button"); x.className="x"; x.type="button"; x.setAttribute("aria-label","Borrar este gasto"); x.textContent="✕";
+        x.onclick=()=>{ pendingDelete=e.id; render(); };
+        li.appendChild(x);
+      }
+      list.appendChild(li);
+    });
+    box.appendChild(sec);
+  });
+
+  // history
+  const hb=$("histBody"); hb.innerHTML="";
+  const past = pastCycles(w);
+  if(!past.length){ hb.innerHTML='<p class="empty">Aquí vas a ver cada mes terminado: cuánto gastaste y cuánto ahorraste. El primero aparece el '+nice(nextCycle(w))+'.</p>'; }
+  else{
+    let rows="";
+    past.reverse().forEach(x=>{ const sp=cycleSpent(x), sv=plan.savings+(spendable()-sp);
+      rows+='<tr><td>'+nice(x)+'</td><td class="num">'+money(spendable())+'</td><td class="num">'+money(sp)+'</td><td class="num '+(sv>=0?"pos":"neg")+'">'+money(sv)+'</td></tr>'; });
+    hb.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Mes</th><th>Para gastar</th><th>Gastaste</th><th>Ahorraste</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+}
+
+// ---------- form ----------
+const catsBox=$("cats");
+CATS.forEach(c=>{
+  const b=document.createElement("button"); b.type="button"; b.className="cat"; b.id="cat-"+c.id; b.setAttribute("aria-pressed","false");
+  b.innerHTML='<span></span><small class="num"></small>'; b.firstChild.textContent=c.name;
+  b.onclick=()=>{ selectedCat=c.id; catsBox.querySelectorAll(".cat").forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false")); check(); };
+  catsBox.appendChild(b);
+});
+$("date").value = todayStr();
+const amountVal = () => { const v=parseFloat(($("amount").value||"").replace(",",".").replace(/[^0-9.]/g,"")); return isFinite(v)?Math.round(v*100)/100:0; };
+function check(){ $("save").disabled = !(amountVal()>0 && selectedCat); }
+$("amount").addEventListener("input", check);
+$("addForm").addEventListener("submit", async ev=>{
+  ev.preventDefault();
+  const amount=amountVal(); if(!(amount>0)||!selectedCat||!store) return;
+  const date=$("date").value||todayStr();
+  const e={ id:"g"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), amount, cat:selectedCat, note:$("note").value.trim(), date, ts:Date.now() };
+  const fm=$("formMsg"); fm.className="form-msg";
+  $("save").disabled=true;
+  try{
+    if(startCycle && date<startCycle) await store.setStart(cycleStart(date));
+    await store.add(e);
+    fm.textContent="Guardado: "+money(amount)+" en "+catById[selectedCat].name+".";
+    $("amount").value=""; $("note").value=""; $("date").value=todayStr();
+    selectedCat=null; catsBox.querySelectorAll(".cat").forEach(x=>x.setAttribute("aria-pressed","false"));
+  }catch(err){
+    fm.className="form-msg err"; fm.textContent="No se guardó. Revisa tu conexión y toca Guardar otra vez.";
+  }
+  check();
+});
+
+// ---------- mi plan ----------
+function fillPlan(){ if(document.activeElement && /^plan/.test(document.activeElement.id)) return; $("planMonthly").value=plan.monthly; $("planSavings").value=plan.savings; }
+const num = v => { const n=parseFloat(String(v).replace(",",".").replace(/[^0-9.]/g,"")); return isFinite(n)?Math.round(n*100)/100:NaN; };
+$("planSave").onclick = async ()=>{
+  const mo=num($("planMonthly").value), sv=num($("planSavings").value), msg=$("planMsg"); msg.className="form-msg";
+  if(!(mo>0) || !(sv>=0) || sv>mo){ msg.className="form-msg err"; msg.textContent="Revisa los números: el ahorro no puede ser más de lo que te dan."; return; }
+  try{ await store.setPlan(Object.assign({}, plan, {monthly:mo, savings:sv})); msg.textContent="Plan guardado: "+money(mo-sv)+" para gastar y "+money(sv)+" para ahorrar."; }
+  catch(e){ msg.className="form-msg err"; msg.textContent="No se guardó. Revisa tu conexión e intenta otra vez."; }
+};
+fillPlan();
+
+// refresh "hoy" when the phone comes back to the app on another day
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ if($("date").value<todayStr() && !$("amount").value) $("date").value=todayStr(); render(); } });
+
+// ---------- avisos (web push) ----------
+const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+function b64ToBytes(b64){ const p="=".repeat((4-b64.length%4)%4); const s=atob((b64+p).replace(/-/g,"+").replace(/_/g,"/")); return Uint8Array.from(s,c=>c.charCodeAt(0)); }
+function showCode(sub){
+  $("notifCode").value = JSON.stringify(sub);
+  $("notifCodeBox").hidden = false;
+}
+async function setupNotif(){
+  const help=$("notifHelp"), btn=$("notifBtn");
+  if(!("serviceWorker" in navigator)) { help.textContent="Este navegador no puede recibir avisos."; btn.hidden=true; return; }
+  if(!isStandalone()){
+    help.innerHTML="Para recibir avisos, primero instala la app: en Safari toca <b>Compartir</b> y luego <b>Agregar a pantalla de inicio</b>. Después ábrela desde el ícono.";
+    btn.hidden=true; return;
+  }
+  if(!("PushManager" in window)){ help.textContent="Tu iPhone necesita iOS 16.4 o más nuevo para recibir avisos. Actualízalo en Configuración > General."; btn.hidden=true; return; }
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if(sub && Notification.permission==="granted"){
+      help.textContent="Avisos activados en este teléfono: 1:00 pm, 6:00 pm y 9:30 pm.";
+      btn.textContent="Ver mi código otra vez"; btn.className="btn ghost";
+      btn.onclick=()=>showCode(sub);
+      return;
+    }
+  }catch(e){}
+  btn.onclick = async ()=>{
+    try{
+      const perm = await Notification.requestPermission();
+      if(perm!=="granted"){ help.textContent="Los avisos están bloqueados. Actívalos en Configuración > Notificaciones > Mis gastos."; return; }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64ToBytes(VAPID)});
+      help.textContent="¡Listo! Permiso dado.";
+      btn.hidden=true; showCode(sub);
+    }catch(e){ help.textContent="No se pudieron activar los avisos ("+(e.message||e)+"). Intenta otra vez."; }
+  };
+}
+$("copyCode").onclick = async ()=>{ const t=$("notifCode"); try{ await navigator.clipboard.writeText(t.value); $("copyCode").textContent="Copiado ✓"; }catch(e){ t.select(); } };
+
+// ---------- copia de seguridad ----------
+$("backup").addEventListener("toggle", ()=>{ if($("backup").open) $("backupText").value = JSON.stringify({expenses, marks, startCycle, plan}); });
+$("backupCopy").onclick = async ()=>{ const t=$("backupText"); t.value=JSON.stringify({expenses, marks, startCycle, plan}); try{ await navigator.clipboard.writeText(t.value); $("backupMsg").textContent="Copiado. Pégalo en Notas para guardarlo."; }catch(e){ t.select(); $("backupMsg").textContent="Selecciona el texto y cópialo."; } };
+let restoreArmed=false;
+$("backupRestore").onclick = ()=>{
+  const m=$("backupMsg"); m.className="form-msg";
+  let j; try{ j=JSON.parse($("backupText").value); }catch(e){ m.className="form-msg err"; m.textContent="Ese texto no es una copia válida."; return; }
+  if(!j || !Array.isArray(j.expenses)){ m.className="form-msg err"; m.textContent="Ese texto no es una copia válida."; return; }
+  if(!restoreArmed){ restoreArmed=true; m.textContent="Esto reemplaza tus datos actuales con "+j.expenses.length+" gastos. Toca Restaurar otra vez para confirmar."; return; }
+  restoreArmed=false; expenses=j.expenses; marks=j.marks||{}; startCycle=j.startCycle||cycleStart(todayStr()); if(j.plan) plan=Object.assign({},plan,j.plan); fillPlan(); localSave(); render(); m.textContent="Datos restaurados.";
+};
+
+if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+setupNotif();
+try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+boot();
+})();
+</script>
+</body>
+</html>
