@@ -130,6 +130,15 @@ td.pos{color:var(--good)} td.neg{color:var(--bad)}
 .help{font-size:.9rem;color:var(--muted);margin:0}
 .help b{color:var(--ink)}
 .stack{display:flex;flex-direction:column;gap:10px}
+.wallet .eyebrow-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.wallet .edit-link{font:inherit;font-size:.82rem;font-weight:700;color:var(--bg);background:transparent;border:1.5px solid color-mix(in srgb,var(--bg) 45%,transparent);border-radius:99px;padding:3px 10px;cursor:pointer}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1 1 0;font:inherit;font-size:.92rem;font-weight:600;border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:12px;padding:9px 10px;cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:var(--sea);background:var(--sea-soft);color:var(--sea)}
+.seg-label{font-size:.85rem;color:var(--muted);margin:0 0 -8px}
+.rd-big{font-family:var(--display);font-weight:800;font-size:2rem;line-height:1.1}
+.rd-big.neg{color:var(--bad)}
+.tag-rd{display:inline-block;margin-left:6px;font-size:.72rem;font-weight:700;color:var(--sea);background:var(--sea-soft);border-radius:99px;padding:1px 7px;vertical-align:middle}
 </style>
 </head>
 <body>
@@ -141,7 +150,7 @@ td.pos{color:var(--good)} td.neg{color:var(--bad)}
   </header>
   
   <section class="wallet" aria-label="Lo que te queda este mes">
-    <span class="eyebrow">Te queda este mes</span>
+    <div class="eyebrow-row"><span class="eyebrow">Te queda este mes</span><button class="edit-link" id="goPlan" type="button">Cambiar</button></div>
     <span class="big num" id="left">$330.00</span>
     <div class="meter" aria-hidden="true"><i id="meter" style="width:0%"></i></div>
     <div class="sub num">
@@ -158,9 +167,18 @@ td.pos{color:var(--good)} td.neg{color:var(--bad)}
 
   <form class="card" id="addForm" autocomplete="off">
     <h2>Anotar un gasto</h2>
-    <label class="amount-row" for="amount"><span>$</span>
+    <label class="amount-row" for="amount"><span id="curSign">$</span>
       <input id="amount" inputmode="decimal" placeholder="0.00" aria-label="Cuánto gastaste">
     </label>
+    <p class="seg-label">Pagué con</p>
+    <div class="seg" id="paySeg" role="group" aria-label="Pagué con">
+      <button type="button" data-pay="normal" aria-pressed="true">Mi dinero</button>
+      <button type="button" data-pay="rd" aria-pressed="false">Tarjeta RD</button>
+    </div>
+    <div class="seg" id="curSeg" role="group" aria-label="Moneda" hidden>
+      <button type="button" data-cur="USD" aria-pressed="true">En dólares (US$)</button>
+      <button type="button" data-cur="DOP" aria-pressed="false">En pesos (RD$)</button>
+    </div>
     <div class="cats" id="cats" role="group" aria-label="Categoría"></div>
     <div class="row2">
       <input id="note" placeholder="¿En qué? (opcional)" maxlength="60" aria-label="Nota">
@@ -175,7 +193,19 @@ td.pos{color:var(--good)} td.neg{color:var(--bad)}
     <ul class="catlist" id="catList"></ul>
   </section>
 
-  <section class="card" aria-labelledby="planTitle">
+  <section class="card" aria-labelledby="rdTitle">
+    <h2 id="rdTitle">Tarjeta RD</h2>
+    <div><span class="rd-big num" id="rdLeft">RD$15,000</span><p class="help num" id="rdSub"></p></div>
+    <p class="help">Lo que pagas con esta tarjeta no se resta de tu presupuesto del mes.</p>
+    <div class="row2">
+      <label class="field" for="rdBalance">Saldo de la tarjeta (RD$)<input id="rdBalance" inputmode="decimal" value="15000"></label>
+      <label class="field" for="rdRate">Pesos por cada US$1<input id="rdRate" inputmode="decimal" value="62"></label>
+    </div>
+    <button class="btn ghost" id="rdSave" type="button">Guardar tarjeta RD</button>
+    <p class="form-msg" id="rdMsg" role="status"></p>
+  </section>
+
+  <section class="card" id="planCard" aria-labelledby="planTitle">
     <h2 id="planTitle">Mi plan</h2>
     <div class="row2">
       <label class="field" for="planMonthly">Me dan al mes<input id="planMonthly" inputmode="decimal" value="350"></label>
@@ -253,6 +283,8 @@ let expenses = [];   // {id, amount, cat, note, date, ts}
 let marks = {};      // date -> true (día sin gastos)
 let startCycle = null;
 let plan = {monthly:350, savings:20, cycleDay:7};
+let rd = {balance:15000, rate:62};   // Tarjeta RD: saldo en pesos y tasa
+let payMode = "normal", curMode = "USD";
 let selectedCat = null;
 let pendingDelete = null;
 let store = null;
@@ -261,12 +293,12 @@ let store = null;
 const LS = "misgastos-v1";
 const VAPID = "BLKz40ZpguoSS0fhlZ4-dz7jv5cRsXU1eGl0Igp0-mr39u2MfEzMXl3AXlE87CUdW7pNvsz2YBtXBw6e-Ki7RX0";
 function localLoad(){ try{ const j=JSON.parse(localStorage.getItem(LS)||"{}"); return j; }catch(e){ return {}; } }
-function localSave(){ try{ localStorage.setItem(LS, JSON.stringify({expenses, marks, startCycle, plan})); }catch(e){} }
+function localSave(){ try{ localStorage.setItem(LS, JSON.stringify({expenses, marks, startCycle, plan, rd})); }catch(e){} }
 
 
 function useLocal(){
   const j = localLoad();
-  expenses = j.expenses||[]; marks = j.marks||{}; if(j.plan) plan = Object.assign({}, plan, j.plan); startCycle = j.startCycle||cycleStart(todayStr());
+  expenses = j.expenses||[]; marks = j.marks||{}; if(j.plan) plan = Object.assign({}, plan, j.plan); if(j.rd) rd = Object.assign({}, rd, j.rd); startCycle = j.startCycle||cycleStart(todayStr());
   store = {
     kind:"local",
     add: async e => { expenses.push(e); localSave(); render(); },
@@ -275,6 +307,7 @@ function useLocal(){
     unmark: async d => { delete marks[d]; localSave(); render(); },
     setStart: async w => { startCycle=w; localSave(); render(); },
     setPlan: async p => { plan=p; localSave(); render(); },
+    setRd: async x => { rd=x; localSave(); render(); },
   };
   localSave();
   render();
@@ -290,7 +323,11 @@ function catBudget(c){
   const flexTotal = CATS.filter(x=>!x.fixed).reduce((a,x)=>a+x.w,0);
   return Math.floor(Math.max(0, avail-fixedTotal)*c.w/flexTotal);
 }
-function cycleSpent(s){ const end=cycleEnd(s); return expenses.filter(e=>e.date>=s && e.date<=end).reduce((a,e)=>a+e.amount,0); }
+const isRd = e => e.pay==="rd";
+const budgetExp = () => expenses.filter(e=>!isRd(e));
+const pesos = n => (n<0?"-":"")+"RD$"+Math.abs(n).toLocaleString("en-US",{maximumFractionDigits:0});
+function rdSpent(){ return expenses.filter(isRd).reduce((a,e)=>a+(e.dop||0),0); }
+function cycleSpent(s){ const end=cycleEnd(s); return budgetExp().filter(e=>e.date>=s && e.date<=end).reduce((a,e)=>a+e.amount,0); }
 function pastCycles(cur){ const out=[]; if(!startCycle) return out; for(let x=startCycle; x<cur; x=nextCycle(x)) out.push(x); return out; }
 function totalSaved(cur){ return pastCycles(cur).reduce((a,x)=>a + plan.savings + (spendable()-cycleSpent(x)), 0); }
 function loggedOn(d){ return !!marks[d] || expenses.some(e=>e.date===d); }
@@ -316,6 +353,12 @@ function render(){
   CATS.forEach(c=>{ const el=document.querySelector("#cat-"+c.id+" small"); if(el) el.textContent=money(catBudget(c))+" / mes"; });
   $("planHelp").textContent = "Puedes gastar "+money(avail)+" al mes. Lo que te sobre al final también se va a tu ahorro.";
 
+  // tarjeta RD
+  const rdLeftN = rd.balance - rdSpent(), rl=$("rdLeft");
+  rl.textContent = "Te quedan "+pesos(rdLeftN); rl.classList.toggle("neg", rdLeftN<0);
+  $("rdSub").textContent = "≈ "+money(rdLeftN/(rd.rate||62))+" · Gastado: "+pesos(rdSpent())+" de "+pesos(rd.balance);
+  if(!(document.activeElement && /^rd/.test(document.activeElement.id))){ $("rdBalance").value=rd.balance; $("rdRate").value=rd.rate; }
+
   // today
   const has = loggedOn(today), s = streak();
   const msg = $("todayMsg"), act = $("todayAction");
@@ -335,7 +378,7 @@ function render(){
   // categories
   const ul = $("catList"); ul.innerHTML="";
   CATS.forEach(c=>{
-    const sp = expenses.filter(e=>e.cat===c.id && e.date>=w && e.date<=end).reduce((a,e)=>a+e.amount,0);
+    const sp = budgetExp().filter(e=>e.cat===c.id && e.date>=w && e.date<=end).reduce((a,e)=>a+e.amount,0);
     const b = catBudget(c), r = b>0 ? sp/b : (sp>0?2:0), li=document.createElement("li");
     const cls = r>1?"over":r>=.8?"warn":"";
     li.innerHTML = '<span class="name"></span><span class="vals num '+(r>1?"over":"")+'"><b>'+money(sp)+'</b> de '+money(b)+'</span><div class="bar"><i class="'+cls+'" style="width:'+Math.min(100,r*100)+'%"></i></div>';
@@ -349,16 +392,16 @@ function render(){
   const byDay = {}; wk.forEach(e=>{ (byDay[e.date]=byDay[e.date]||[]).push(e); });
   Object.keys(byDay).sort().reverse().forEach(d=>{
     const sec=document.createElement("div"); sec.className="day";
-    const tot=byDay[d].reduce((a,e)=>a+e.amount,0), dd=parse(d);
+    const tot=byDay[d].filter(e=>!isRd(e)).reduce((a,e)=>a+e.amount,0), dd=parse(d);
     sec.innerHTML='<h3><span>'+(d===today?"Hoy":DAYS[dd.getDay()]+" "+nice(d))+'</span><span class="num">'+money(tot)+'</span></h3><ul></ul>';
     const list=sec.querySelector("ul");
     byDay[d].forEach(e=>{
       const li=document.createElement("li"); li.className="entry";
       const what=document.createElement("div"); what.className="what";
-      const t=document.createElement("div"); t.textContent=(catById[e.cat]||{name:"Otro"}).name;
+      const t=document.createElement("div"); t.textContent=isRd(e) ? "Tarjeta RD" : (catById[e.cat]||{name:"Otro"}).name;
       what.appendChild(t);
       if(e.note){ const n=document.createElement("small"); n.textContent=e.note; what.appendChild(n); }
-      const a=document.createElement("span"); a.className="amt num"; a.textContent=money(e.amount);
+      const a=document.createElement("span"); a.className="amt num"; a.textContent=isRd(e) ? (e.cur==="DOP" ? pesos(e.orig) : money(e.orig)+" · "+pesos(e.dop)) : money(e.amount);
       li.append(what,a);
       if(pendingDelete===e.id){
         const c=document.createElement("div"); c.className="confirm";
@@ -398,21 +441,33 @@ CATS.forEach(c=>{
 });
 $("date").value = todayStr();
 const amountVal = () => { const v=parseFloat(($("amount").value||"").replace(",",".").replace(/[^0-9.]/g,"")); return isFinite(v)?Math.round(v*100)/100:0; };
-function check(){ $("save").disabled = !(amountVal()>0 && selectedCat); }
+function check(){ $("save").disabled = !(amountVal()>0 && (selectedCat || payMode==="rd")); }
+function setPay(m){
+  payMode=m; $("paySeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.pay===m?"true":"false"));
+  $("curSeg").hidden = m!=="rd"; $("cats").hidden = m==="rd";
+  if(m!=="rd") setCur("USD"); check();
+}
+function setCur(c){
+  curMode=c; $("curSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.cur===c?"true":"false"));
+  $("curSign").textContent = c==="DOP" ? "RD$" : "$";
+}
+$("paySeg").querySelectorAll("button").forEach(b=>b.onclick=()=>setPay(b.dataset.pay));
+$("curSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>setCur(b.dataset.cur));
 $("amount").addEventListener("input", check);
 $("addForm").addEventListener("submit", async ev=>{
   ev.preventDefault();
-  const amount=amountVal(); if(!(amount>0)||!selectedCat||!store) return;
+  const amount=amountVal(); if(!(amount>0)||!(selectedCat||payMode==="rd")||!store) return;
   const date=$("date").value||todayStr();
   const e={ id:"g"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), amount, cat:selectedCat, note:$("note").value.trim(), date, ts:Date.now() };
+  if(payMode==="rd"){ e.pay="rd"; e.cat="rd"; e.cur=curMode; e.orig=amount; e.dop = curMode==="DOP" ? amount : Math.round(amount*rd.rate*100)/100; e.amount = Math.round(e.dop/rd.rate*100)/100; }
   const fm=$("formMsg"); fm.className="form-msg";
   $("save").disabled=true;
   try{
     if(startCycle && date<startCycle) await store.setStart(cycleStart(date));
     await store.add(e);
-    fm.textContent="Guardado: "+money(amount)+" en "+catById[selectedCat].name+".";
+    fm.textContent = e.pay==="rd" ? "Guardado en Tarjeta RD: "+(e.cur==="DOP"?pesos(e.dop):money(e.orig)+" ("+pesos(e.dop)+")")+". Te quedan "+pesos(rd.balance-rdSpent())+"." : "Guardado: "+money(amount)+" en "+catById[selectedCat].name+".";
     $("amount").value=""; $("note").value=""; $("date").value=todayStr();
-    selectedCat=null; catsBox.querySelectorAll(".cat").forEach(x=>x.setAttribute("aria-pressed","false"));
+    selectedCat=null; catsBox.querySelectorAll(".cat").forEach(x=>x.setAttribute("aria-pressed","false")); setPay("normal");
   }catch(err){
     fm.className="form-msg err"; fm.textContent="No se guardó. Revisa tu conexión y toca Guardar otra vez.";
   }
@@ -429,6 +484,12 @@ $("planSave").onclick = async ()=>{
   catch(e){ msg.className="form-msg err"; msg.textContent="No se guardó. Revisa tu conexión e intenta otra vez."; }
 };
 fillPlan();
+$("goPlan").onclick = ()=>{ $("planCard").scrollIntoView({behavior:"smooth", block:"start"}); setTimeout(()=>$("planMonthly").focus({preventScroll:true}), 400); };
+$("rdSave").onclick = async ()=>{
+  const b=num($("rdBalance").value), t=num($("rdRate").value), msg=$("rdMsg"); msg.className="form-msg";
+  if(!(b>=0) || !(t>0)){ msg.className="form-msg err"; msg.textContent="Revisa los números de la tarjeta."; return; }
+  await store.setRd({balance:b, rate:t}); msg.textContent="Guardado. Te quedan "+pesos(b-rdSpent())+" en la tarjeta.";
+};
 
 // refresh "hoy" when the phone comes back to the app on another day
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ if($("date").value<todayStr() && !$("amount").value) $("date").value=todayStr(); render(); } });
@@ -472,15 +533,15 @@ async function setupNotif(){
 $("copyCode").onclick = async ()=>{ const t=$("notifCode"); try{ await navigator.clipboard.writeText(t.value); $("copyCode").textContent="Copiado ✓"; }catch(e){ t.select(); } };
 
 // ---------- copia de seguridad ----------
-$("backup").addEventListener("toggle", ()=>{ if($("backup").open) $("backupText").value = JSON.stringify({expenses, marks, startCycle, plan}); });
-$("backupCopy").onclick = async ()=>{ const t=$("backupText"); t.value=JSON.stringify({expenses, marks, startCycle, plan}); try{ await navigator.clipboard.writeText(t.value); $("backupMsg").textContent="Copiado. Pégalo en Notas para guardarlo."; }catch(e){ t.select(); $("backupMsg").textContent="Selecciona el texto y cópialo."; } };
+$("backup").addEventListener("toggle", ()=>{ if($("backup").open) $("backupText").value = JSON.stringify({expenses, marks, startCycle, plan, rd}); });
+$("backupCopy").onclick = async ()=>{ const t=$("backupText"); t.value=JSON.stringify({expenses, marks, startCycle, plan, rd}); try{ await navigator.clipboard.writeText(t.value); $("backupMsg").textContent="Copiado. Pégalo en Notas para guardarlo."; }catch(e){ t.select(); $("backupMsg").textContent="Selecciona el texto y cópialo."; } };
 let restoreArmed=false;
 $("backupRestore").onclick = ()=>{
   const m=$("backupMsg"); m.className="form-msg";
   let j; try{ j=JSON.parse($("backupText").value); }catch(e){ m.className="form-msg err"; m.textContent="Ese texto no es una copia válida."; return; }
   if(!j || !Array.isArray(j.expenses)){ m.className="form-msg err"; m.textContent="Ese texto no es una copia válida."; return; }
   if(!restoreArmed){ restoreArmed=true; m.textContent="Esto reemplaza tus datos actuales con "+j.expenses.length+" gastos. Toca Restaurar otra vez para confirmar."; return; }
-  restoreArmed=false; expenses=j.expenses; marks=j.marks||{}; startCycle=j.startCycle||cycleStart(todayStr()); if(j.plan) plan=Object.assign({},plan,j.plan); fillPlan(); localSave(); render(); m.textContent="Datos restaurados.";
+  restoreArmed=false; expenses=j.expenses; marks=j.marks||{}; startCycle=j.startCycle||cycleStart(todayStr()); if(j.plan) plan=Object.assign({},plan,j.plan); if(j.rd) rd=Object.assign({},rd,j.rd); fillPlan(); localSave(); render(); m.textContent="Datos restaurados.";
 };
 
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
