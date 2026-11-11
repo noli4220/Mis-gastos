@@ -139,118 +139,260 @@ td.pos{color:var(--good)} td.neg{color:var(--bad)}
 .rd-big{font-family:var(--display);font-weight:800;font-size:2rem;line-height:1.1}
 .rd-big.neg{color:var(--bad)}
 .tag-rd{display:inline-block;margin-left:6px;font-size:.72rem;font-weight:700;color:var(--sea);background:var(--sea-soft);border-radius:99px;padding:1px 7px;vertical-align:middle}
+
+/* ---------- organización: pestañas ---------- */
+body{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+.view{display:flex;flex-direction:column;gap:18px}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.tabbar div{max-width:480px;margin:0 auto;display:flex;gap:2px}
+.tabbar button{flex:1 1 0;min-width:0;font:inherit;font-size:.72rem;font-weight:600;color:var(--muted);background:transparent;border:0;border-radius:12px;
+  padding:6px 2px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabbar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tabbar button[aria-current="page"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.view-title{font-size:1.35rem;font-weight:800;letter-spacing:-.01em}
+.wallet .week-line{font-weight:700;font-size:1rem;background:color-mix(in srgb,var(--bg) 14%,transparent);border-radius:12px;padding:8px 12px}
+.wallet .week-line small{display:block;font-weight:400;opacity:.8;font-size:.82rem}
+
+/* gasto rápido */
+.quick-row{display:flex;gap:8px}
+#quick{flex:1 1 auto;min-width:0;font:inherit;font-size:1.1rem;border:1.5px solid var(--line);border-radius:12px;padding:12px;background:transparent;color:var(--ink)}
+.divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.82rem;margin:0}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* resumen */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{border:1px solid var(--line);border-radius:14px;padding:10px 12px;min-width:0}
+.tile .k{font-size:.78rem;color:var(--muted)}
+.tile .v{font-family:var(--display);font-weight:800;font-size:1.35rem;line-height:1.2;overflow-wrap:anywhere}
+.tile .v.small{font-size:1.05rem}
+.tile .d{font-size:.8rem;color:var(--muted)}
+.chart-read{font-weight:600;min-height:1.45em;margin:0}
+.chart-read span{color:var(--muted);font-weight:400}
+.chart{display:flex;align-items:stretch;gap:2px;height:170px}
+.chart button{flex:1 1 0;min-width:0;font:inherit;background:transparent;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column;gap:6px;color:var(--muted);border-radius:8px}
+.chart .plot{flex:1;position:relative;border-bottom:1px solid var(--line)}
+.chart .plot i{position:absolute;left:14%;right:14%;bottom:0;background:var(--sea);opacity:.45;border-radius:4px 4px 0 0}
+.chart button[aria-pressed="true"] .plot i{opacity:1}
+.chart button[aria-pressed="true"]{color:var(--ink)}
+.chart .lbl{font-size:.72rem;font-weight:600;line-height:1.15;text-align:center;min-height:2.3em}
+
+/* metas */
+.goal{display:flex;flex-direction:column;gap:8px;padding:14px 0;border-top:1px solid var(--line)}
+.goal:first-child{border-top:0;padding-top:0}
+.goal-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.goal-head b{font-size:1.05rem;overflow-wrap:anywhere}
+.goal .bar{height:12px}
+.goal .bar>i.done{background:var(--accent)}
+.goal-add{display:flex;gap:8px;align-items:center}
+.goal-add input{flex:1 1 auto;min-width:0;font:inherit;border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;background:transparent;color:var(--ink)}
+.field input[type="date"]{font-size:1rem;font-weight:600}
+.suggest{font:inherit;font-size:.88rem;font-weight:600;color:var(--sea);background:var(--sea-soft);border:0;border-radius:99px;padding:7px 12px;cursor:pointer;align-self:flex-start}
 </style>
 </head>
 <body>
 
 <div class="wrap">
   <header class="top">
-    <h1>Mi mes</h1>
+    <h1 id="viewTitle">Mi mes</h1>
     <span class="week-label num" id="weekLabel"></span>
   </header>
-  
-  <section class="wallet" aria-label="Lo que te queda este mes">
-    <div class="eyebrow-row"><span class="eyebrow">Te queda este mes</span><button class="edit-link" id="goPlan" type="button">Cambiar</button></div>
-    <span class="big num" id="left">$330.00</span>
-    <div class="meter" aria-hidden="true"><i id="meter" style="width:0%"></i></div>
-    <div class="sub num">
-      <span id="spentTxt">Gastado: $0.00 de $330.00</span>
-      <span id="carryTxt"></span>
-      <span id="perDay"></span>
-    </div>
-  </section>
 
-  <section class="today" aria-live="polite">
-    <div class="msg" id="todayMsg">¿Ya anotaste lo de hoy?<small id="streak"></small></div>
-    <div id="todayAction"><button class="btn ghost" id="noSpend" type="button">Hoy no gasté nada</button></div>
-  </section>
-
-  <form class="card" id="addForm" autocomplete="off">
-    <h2>Anotar un gasto</h2>
-    <label class="amount-row" for="amount"><span id="curSign">$</span>
-      <input id="amount" inputmode="decimal" placeholder="0.00" aria-label="Cuánto gastaste">
-    </label>
-    <p class="seg-label">Pagué con</p>
-    <div class="seg" id="paySeg" role="group" aria-label="Pagué con">
-      <button type="button" data-pay="normal" aria-pressed="true">Mi dinero</button>
-      <button type="button" data-pay="rd" aria-pressed="false">Tarjeta RD</button>
-    </div>
-    <div class="seg" id="curSeg" role="group" aria-label="Moneda" hidden>
-      <button type="button" data-cur="USD" aria-pressed="true">En dólares (US$)</button>
-      <button type="button" data-cur="DOP" aria-pressed="false">En pesos (RD$)</button>
-    </div>
-    <div class="cats" id="cats" role="group" aria-label="Categoría"></div>
-    <div class="row2">
-      <input id="note" placeholder="¿En qué? (opcional)" maxlength="60" aria-label="Nota">
-      <input id="date" type="date" aria-label="Fecha">
-    </div>
-    <button class="btn primary" id="save" type="submit" disabled>Guardar gasto</button>
-    <p class="form-msg" id="formMsg" role="status"></p>
-  </form>
-
-  <section class="card" aria-labelledby="catsTitle">
-    <h2 id="catsTitle">Por categoría</h2>
-    <ul class="catlist" id="catList"></ul>
-  </section>
-
-  <section class="card" aria-labelledby="rdTitle">
-    <h2 id="rdTitle">Tarjeta RD</h2>
-    <div><span class="rd-big num" id="rdLeft">RD$15,000</span><p class="help num" id="rdSub"></p></div>
-    <p class="help">Lo que pagas con esta tarjeta no se resta de tu presupuesto del mes.</p>
-    <div class="row2">
-      <label class="field" for="rdBalance">Saldo de la tarjeta (RD$)<input id="rdBalance" inputmode="decimal" value="15000"></label>
-      <label class="field" for="rdRate">Pesos por cada US$1<input id="rdRate" inputmode="decimal" value="62"></label>
-    </div>
-    <button class="btn ghost" id="rdSave" type="button">Guardar tarjeta RD</button>
-    <p class="form-msg" id="rdMsg" role="status"></p>
-  </section>
-
-  <section class="card" id="planCard" aria-labelledby="planTitle">
-    <h2 id="planTitle">Mi plan</h2>
-    <div class="row2">
-      <label class="field" for="planMonthly">Me dan al mes<input id="planMonthly" inputmode="decimal" value="350"></label>
-      <label class="field" for="planSavings">Quiero ahorrar<input id="planSavings" inputmode="decimal" value="20"></label>
-    </div>
-    <p class="help" id="planHelp"></p>
-    <button class="btn ghost" id="planSave" type="button">Guardar mi plan</button>
-    <p class="form-msg" id="planMsg" role="status"></p>
-  </section>
-
-  <section class="card" aria-labelledby="logTitle">
-    <h2 id="logTitle">Gastos de este mes</h2>
-    <div class="days" id="days"></div>
-  </section>
-
-  <section class="card" id="notifCard" aria-labelledby="notifTitle">
-    <h2 id="notifTitle">Avisos 3 veces al día</h2>
-    <div class="stack" id="notifBody">
-      <p class="help" id="notifHelp">Te aviso a la 1:00 pm, 6:00 pm y 9:30 pm para que anotes tus gastos.</p>
-      <button class="btn primary" id="notifBtn" type="button">Activar avisos</button>
-      <div id="notifCodeBox" class="stack" hidden>
-        <p class="help"><b>Último paso:</b> copia este código y mándaselo a Claude en el chat. Con eso empiezan a llegarte los avisos.</p>
-        <textarea class="notif-code" id="notifCode" readonly></textarea>
-        <button class="btn ghost" id="copyCode" type="button">Copiar código</button>
+  <!-- ================= HOY ================= -->
+  <main class="view" id="view-hoy">
+    <section class="wallet" aria-label="Lo que te queda este mes">
+      <div class="eyebrow-row"><span class="eyebrow">Te queda este mes</span><button class="edit-link" id="goPlan" type="button">Cambiar</button></div>
+      <span class="big num" id="left">$330.00</span>
+      <div class="meter" aria-hidden="true"><i id="meter" style="width:0%"></i></div>
+      <div class="week-line num" id="weekLine"></div>
+      <div class="sub num">
+        <span id="spentTxt">Gastado: $0.00 de $330.00</span>
+        <span id="carryTxt"></span>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <details class="card" id="backup">
-    <summary>Copia de seguridad</summary>
-    <div class="stack">
-      <p class="help">Tus gastos se guardan en este teléfono. Si vas a borrar la app o cambiar de celular, copia este texto y guárdalo (por ejemplo en Notas). Para recuperarlo, pégalo aquí y toca Restaurar.</p>
-      <textarea class="notif-code" id="backupText" aria-label="Texto de la copia de seguridad"></textarea>
-      <div class="row2"><button class="btn ghost" id="backupCopy" type="button">Copiar mis datos</button><button class="btn ghost" id="backupRestore" type="button">Restaurar</button></div>
-      <p class="form-msg" id="backupMsg" role="status"></p>
-    </div>
-  </details>
+    <section class="today" aria-live="polite">
+      <div class="msg" id="todayMsg">¿Ya anotaste lo de hoy?<small id="streak"></small></div>
+      <div id="todayAction"><button class="btn ghost" id="noSpend" type="button">Hoy no gasté nada</button></div>
+    </section>
 
-  <details class="card" id="history">
-    <summary>Meses anteriores</summary>
-    <div id="histBody"></div>
-  </details>
+    <section class="card" aria-labelledby="addTitle">
+      <h2 id="addTitle">Anotar un gasto</h2>
+      <form class="stack" id="quickForm" autocomplete="off">
+        <p class="help">Escríbelo rápido, por ejemplo <b>uber 12</b> o <b>publix 23.50</b>. Yo pongo la categoría.</p>
+        <div class="quick-row">
+          <input id="quick" placeholder="uber 12" maxlength="70" aria-label="Escribe el gasto, por ejemplo uber 12" enterkeyhint="done">
+          <button class="btn primary" id="quickSave" type="submit">Anotar</button>
+        </div>
+        <p class="form-msg" id="quickMsg" role="status"></p>
+      </form>
+      <p class="divider">o paso a paso</p>
+      <form class="stack" id="addForm" autocomplete="off" style="gap:14px">
+        <label class="amount-row" for="amount"><span id="curSign">$</span>
+          <input id="amount" inputmode="decimal" placeholder="0.00" aria-label="Cuánto gastaste">
+        </label>
+        <p class="seg-label">Pagué con</p>
+        <div class="seg" id="paySeg" role="group" aria-label="Pagué con">
+          <button type="button" data-pay="normal" aria-pressed="true">Mi dinero</button>
+          <button type="button" data-pay="rd" aria-pressed="false">Tarjeta RD</button>
+        </div>
+        <div class="seg" id="curSeg" role="group" aria-label="Moneda" hidden>
+          <button type="button" data-cur="USD" aria-pressed="true">En dólares (US$)</button>
+          <button type="button" data-cur="DOP" aria-pressed="false">En pesos (RD$)</button>
+        </div>
+        <div class="cats" id="cats" role="group" aria-label="Categoría"></div>
+        <div class="row2">
+          <input id="note" placeholder="¿En qué? (opcional)" maxlength="60" aria-label="Nota">
+          <input id="date" type="date" aria-label="Fecha">
+        </div>
+        <button class="btn primary" id="save" type="submit" disabled>Guardar gasto</button>
+        <p class="form-msg" id="formMsg" role="status"></p>
+      </form>
+    </section>
 
-  <p class="foot">Tu mes va del 7 al 6 del mes siguiente. Lo que te sobre al final del mes se suma a tu ahorro.</p>
+    <section class="card" aria-labelledby="todayLogTitle">
+      <h2 id="todayLogTitle">Lo de hoy</h2>
+      <div class="days" id="todayList"></div>
+    </section>
+  </main>
+
+  <!-- ================= RESUMEN ================= -->
+  <main class="view" id="view-resumen" hidden>
+    <section class="card" aria-labelledby="weekTitle">
+      <h2 id="weekTitle">Tu semana</h2>
+      <div class="tiles" id="weekTiles"></div>
+      <p class="help" id="weekNote"></p>
+    </section>
+
+    <section class="card" aria-labelledby="chartTitle">
+      <h2 id="chartTitle">Cuánto gastaste</h2>
+      <div class="seg" id="chartSeg" role="group" aria-label="Ver por">
+        <button type="button" data-chart="week" aria-pressed="true">Esta semana</button>
+        <button type="button" data-chart="month" aria-pressed="false">Este mes</button>
+      </div>
+      <p class="chart-read num" id="chartRead" aria-live="polite"></p>
+      <div class="chart" id="chart"></div>
+      <p class="help">Toca una barra para ver el monto. No incluye lo pagado con la Tarjeta RD.</p>
+    </section>
+
+    <section class="card" aria-labelledby="catsTitle">
+      <h2 id="catsTitle">Por categoría este mes</h2>
+      <ul class="catlist" id="catList"></ul>
+    </section>
+
+    <section class="card" aria-labelledby="logTitle">
+      <h2 id="logTitle">Gastos de este mes</h2>
+      <div class="days" id="days"></div>
+    </section>
+
+    <details class="card" id="history">
+      <summary>Meses anteriores</summary>
+      <div id="histBody"></div>
+    </details>
+  </main>
+
+  <!-- ================= METAS ================= -->
+  <main class="view" id="view-metas" hidden>
+    <section class="card" aria-labelledby="goalsTitle">
+      <h2 id="goalsTitle">Mis metas de ahorro</h2>
+      <div id="goalList"></div>
+    </section>
+    <section class="card" aria-labelledby="newGoalTitle">
+      <h2 id="newGoalTitle">Nueva meta</h2>
+      <button class="suggest" id="goalSuggest" type="button">Idea: Ropa para diciembre</button>
+      <label class="field" for="goalName">¿Para qué quieres ahorrar?<input id="goalName" maxlength="40" placeholder="Ropa para diciembre" style="font-size:1rem;font-weight:600"></label>
+      <div class="row2">
+        <label class="field" for="goalTarget">¿Cuánto necesitas? (US$)<input id="goalTarget" inputmode="decimal" placeholder="150"></label>
+        <label class="field" for="goalDue">¿Para cuándo? (opcional)<input id="goalDue" type="date"></label>
+      </div>
+      <button class="btn primary" id="goalSave" type="button">Crear meta</button>
+      <p class="form-msg" id="goalMsg" role="status"></p>
+    </section>
+  </main>
+
+  <!-- ================= VIAJE RD ================= -->
+  <main class="view" id="view-rd" hidden>
+    <section class="card" aria-labelledby="tripTitle">
+      <h2 id="tripTitle">Mi viaje a RD</h2>
+      <div><span class="rd-big num" id="tripBig"></span><p class="help num" id="tripSub"></p></div>
+      <div class="row2">
+        <label class="field" for="tripStart">Llego el<input id="tripStart" type="date"></label>
+        <label class="field" for="tripEnd">Regreso el<input id="tripEnd" type="date"></label>
+      </div>
+      <button class="btn ghost" id="tripSave" type="button">Guardar fechas</button>
+      <p class="form-msg" id="tripMsg" role="status"></p>
+    </section>
+
+    <section class="card" aria-labelledby="rdTitle">
+      <h2 id="rdTitle">Tarjeta RD</h2>
+      <div><span class="rd-big num" id="rdLeft">RD$15,000</span><p class="help num" id="rdSub"></p></div>
+      <p class="help">Lo que pagas con esta tarjeta no se resta de tu presupuesto del mes.</p>
+      <div class="row2">
+        <label class="field" for="rdBalance">Saldo de la tarjeta (RD$)<input id="rdBalance" inputmode="decimal" value="15000"></label>
+        <label class="field" for="rdRate">Pesos por cada US$1<input id="rdRate" inputmode="decimal" value="62"></label>
+      </div>
+      <button class="btn ghost" id="rdSave" type="button">Guardar tarjeta RD</button>
+      <p class="form-msg" id="rdMsg" role="status"></p>
+    </section>
+
+    <section class="card" aria-labelledby="convTitle">
+      <h2 id="convTitle">Convertir</h2>
+      <div class="row2">
+        <label class="field" for="convUsd">Dólares (US$)<input id="convUsd" inputmode="decimal" placeholder="10"></label>
+        <label class="field" for="convDop">Pesos (RD$)<input id="convDop" inputmode="decimal" placeholder="620"></label>
+      </div>
+      <p class="help num" id="convHelp"></p>
+    </section>
+  </main>
+
+  <!-- ================= AJUSTES ================= -->
+  <main class="view" id="view-ajustes" hidden>
+    <section class="card" id="planCard" aria-labelledby="planTitle">
+      <h2 id="planTitle">Mi plan</h2>
+      <div class="row2">
+        <label class="field" for="planMonthly">Me dan al mes<input id="planMonthly" inputmode="decimal" value="350"></label>
+        <label class="field" for="planSavings">Quiero ahorrar<input id="planSavings" inputmode="decimal" value="20"></label>
+      </div>
+      <p class="help" id="planHelp"></p>
+      <button class="btn ghost" id="planSave" type="button">Guardar mi plan</button>
+      <p class="form-msg" id="planMsg" role="status"></p>
+    </section>
+
+    <section class="card" id="notifCard" aria-labelledby="notifTitle">
+      <h2 id="notifTitle">Avisos 3 veces al día</h2>
+      <div class="stack" id="notifBody">
+        <p class="help" id="notifHelp">Te aviso a la 1:00 pm, 6:00 pm y 9:30 pm para que anotes tus gastos.</p>
+        <p class="help">Los avisos también te dicen cuánto te queda esta semana.</p>
+        <button class="btn primary" id="notifBtn" type="button">Activar avisos</button>
+        <div id="notifCodeBox" class="stack" hidden>
+          <p class="help"><b>Último paso:</b> copia este código y mándaselo a Claude en el chat. Con eso empiezan a llegarte los avisos.</p>
+          <textarea class="notif-code" id="notifCode" readonly></textarea>
+          <button class="btn ghost" id="copyCode" type="button">Copiar código</button>
+        </div>
+      </div>
+    </section>
+
+    <details class="card" id="backup">
+      <summary>Copia de seguridad</summary>
+      <div class="stack">
+        <p class="help">Tus gastos se guardan en este teléfono. Si vas a borrar la app o cambiar de celular, copia este texto y guárdalo (por ejemplo en Notas). Para recuperarlo, pégalo aquí y toca Restaurar.</p>
+        <textarea class="notif-code" id="backupText" aria-label="Texto de la copia de seguridad"></textarea>
+        <div class="row2"><button class="btn ghost" id="backupCopy" type="button">Copiar mis datos</button><button class="btn ghost" id="backupRestore" type="button">Restaurar</button></div>
+        <p class="form-msg" id="backupMsg" role="status"></p>
+      </div>
+    </details>
+
+    <p class="foot" id="foot"></p>
+  </main>
 </div>
+
+<nav class="tabbar" aria-label="Secciones"><div>
+  <button type="button" data-tab="hoy" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Hoy</button>
+  <button type="button" data-tab="resumen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-7"/></svg>Resumen</button>
+  <button type="button" data-tab="metas"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Metas</button>
+  <button type="button" data-tab="rd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L3 10l7 3 3 7z"/><path d="M21 3l-11 10"/></svg>Viaje RD</button>
+  <button type="button" data-tab="ajustes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2.5"/><circle cx="8" cy="17" r="2.5"/></svg>Ajustes</button>
+</div></nav>
 
 <script>
 (function(){
@@ -263,20 +405,33 @@ const CATS = [
 ];
 const catById = Object.fromEntries(CATS.map(c=>[c.id,c]));
 const DAYS = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+const DAY1 = ["D","L","M","M","J","V","S"];
 const MONTHS = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+// Palabras para adivinar la categoría al escribir rápido ("uber 12").
+const WORDS = {
+  uber:   ["uber","lyft","taxi","carro","bus","metro","tren","gasolina"],
+  subs:   ["spotify","netflix","icloud","suscrip","apple","disney","hbo","max","youtube","prime","chatgpt","claude","gym","gimnasio"],
+  super:  ["publix","walmart","aldi","super","mercado","target","compra","trader","costco","sedano","winn","whole foods","cvs","walgreens","colmado"],
+  campus: ["campus","almuerzo","cafe","comida","starbucks","lunch","desayuno","cena","chipotle","pizza","sandwich","panera","subway","merienda","snack","cafeteria","chick"],
+  gustos: ["cine","salida","fiesta","ropa","regalo","bar","restaurante","helado","unas","pelo","maquillaje","zara","shein","amazon","gusto","concierto","boba","sephora","tienda"],
+};
 
 const $ = id => document.getElementById(id);
 const money = n => (n<0?"-":"")+"$"+Math.abs(n).toFixed(2);
+const money0 = n => { const r=Math.round(Math.abs(n)*100)/100; return (n<0?"-":"")+"$"+(r%1===0?r.toFixed(0):r.toFixed(2)); };
 const pad = n => String(n).padStart(2,"0");
 const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const parse = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
 const addDays = (s,n) => { const d=parse(s); d.setDate(d.getDate()+n); return ymd(d); };
+const daysBetween = (a,b) => Math.round((parse(b)-parse(a))/864e5);
 const mondayOf = s => { const d=parse(s); const k=(d.getDay()+6)%7; d.setDate(d.getDate()-k); return ymd(d); };
 const cycleStart = s => { const d=parse(s), day=plan.cycleDay; const st = d.getDate()>=day ? new Date(d.getFullYear(), d.getMonth(), day) : new Date(d.getFullYear(), d.getMonth()-1, day); return ymd(st); };
 const nextCycle = s => { const d=parse(s); return ymd(new Date(d.getFullYear(), d.getMonth()+1, d.getDate())); };
 const cycleEnd = s => addDays(nextCycle(s), -1);
 const nice = s => { const d=parse(s); return d.getDate()+" "+MONTHS[d.getMonth()]; };
 const todayStr = () => ymd(new Date());
+const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s||"");
+const newId = p => p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
 // ---------- state ----------
 let expenses = [];   // {id, amount, cat, note, date, ts}
@@ -284,32 +439,46 @@ let marks = {};      // date -> true (día sin gastos)
 let startCycle = null;
 let plan = {monthly:350, savings:20, cycleDay:7};
 let rd = {balance:15000, rate:62};   // Tarjeta RD: saldo en pesos y tasa
+let goals = [];      // {id, name, target, saved, due}
+let trip = {start:"", end:""};
 let payMode = "normal", curMode = "USD";
 let selectedCat = null;
-let pendingDelete = null;
+let pendingDelete = null, pendingGoalDelete = null;
+let chartMode = "week", chartSel = null;
 let store = null;
 
-// ---------- storage: db when available, this phone otherwise ----------
+// ---------- storage: this phone ----------
 const LS = "misgastos-v1";
 const VAPID = "BLKz40ZpguoSS0fhlZ4-dz7jv5cRsXU1eGl0Igp0-mr39u2MfEzMXl3AXlE87CUdW7pNvsz2YBtXBw6e-Ki7RX0";
-function localLoad(){ try{ const j=JSON.parse(localStorage.getItem(LS)||"{}"); return j; }catch(e){ return {}; } }
-function localSave(){ try{ localStorage.setItem(LS, JSON.stringify({expenses, marks, startCycle, plan, rd})); }catch(e){} }
-
+const snapshot = () => ({expenses, marks, startCycle, plan, rd, goals, trip});
+function localLoad(){ try{ const j=JSON.parse(localStorage.getItem(LS)||"{}"); return j&&typeof j==="object"?j:{}; }catch(e){ return {}; } }
+function localSave(){ try{ localStorage.setItem(LS, JSON.stringify(snapshot())); }catch(e){} }
+function applyData(j){
+  expenses = Array.isArray(j.expenses)?j.expenses:[]; marks = j.marks||{};
+  if(j.plan) plan = Object.assign({}, plan, j.plan);
+  if(j.rd) rd = Object.assign({}, rd, j.rd);
+  goals = Array.isArray(j.goals)?j.goals:[];
+  trip = Object.assign({start:"", end:""}, j.trip||{});
+  startCycle = j.startCycle||cycleStart(todayStr());
+}
 
 function useLocal(){
-  const j = localLoad();
-  expenses = j.expenses||[]; marks = j.marks||{}; if(j.plan) plan = Object.assign({}, plan, j.plan); if(j.rd) rd = Object.assign({}, rd, j.rd); startCycle = j.startCycle||cycleStart(todayStr());
+  const had = localStorage.getItem(LS)!==null;
+  applyData(localLoad());
+  const commit = () => { localSave(); render(); };
   store = {
     kind:"local",
-    add: async e => { expenses.push(e); localSave(); render(); },
-    del: async id => { expenses = expenses.filter(x=>x.id!==id); localSave(); render(); },
-    mark: async d => { marks[d]=true; localSave(); render(); },
-    unmark: async d => { delete marks[d]; localSave(); render(); },
-    setStart: async w => { startCycle=w; localSave(); render(); },
-    setPlan: async p => { plan=p; localSave(); render(); },
-    setRd: async x => { rd=x; localSave(); render(); },
+    add: async e => { expenses.push(e); commit(); },
+    del: async id => { expenses = expenses.filter(x=>x.id!==id); commit(); },
+    mark: async d => { marks[d]=true; commit(); },
+    unmark: async d => { delete marks[d]; commit(); },
+    setStart: async w => { startCycle=w; commit(); },
+    setPlan: async p => { plan=p; commit(); },
+    setRd: async x => { rd=x; commit(); },
+    setGoals: async g => { goals=g; commit(); },
+    setTrip: async t => { trip=t; commit(); },
   };
-  localSave();
+  if(!had) localSave();
   render();
 }
 
@@ -327,7 +496,8 @@ const isRd = e => e.pay==="rd";
 const budgetExp = () => expenses.filter(e=>!isRd(e));
 const pesos = n => (n<0?"-":"")+"RD$"+Math.abs(n).toLocaleString("en-US",{maximumFractionDigits:0});
 function rdSpent(){ return expenses.filter(isRd).reduce((a,e)=>a+(e.dop||0),0); }
-function cycleSpent(s){ const end=cycleEnd(s); return budgetExp().filter(e=>e.date>=s && e.date<=end).reduce((a,e)=>a+e.amount,0); }
+function rangeSpent(a,b){ return budgetExp().filter(e=>e.date>=a && e.date<=b).reduce((s,e)=>s+e.amount,0); }
+function cycleSpent(s){ return rangeSpent(s, cycleEnd(s)); }
 function pastCycles(cur){ const out=[]; if(!startCycle) return out; for(let x=startCycle; x<cur; x=nextCycle(x)) out.push(x); return out; }
 function totalSaved(cur){ return pastCycles(cur).reduce((a,x)=>a + plan.savings + (spendable()-cycleSpent(x)), 0); }
 function loggedOn(d){ return !!marks[d] || expenses.some(e=>e.date===d); }
@@ -336,10 +506,47 @@ function streak(){
   let n=0; while(loggedOn(d) && n<400){ n++; d=addDays(d,-1); }
   return n;
 }
+// La semana va de lunes a domingo, sin salirse del mes. Su presupuesto es lo que
+// quedaba al empezarla, repartido parejo entre los días que faltan del mes.
+function weekInfo(today){
+  const w = cycleStart(today), end = cycleEnd(w), mon = mondayOf(today);
+  const from = mon<w ? w : mon, sun = addDays(mon,6), to = sun>end ? end : sun;
+  const before = from>w ? rangeSpent(w, addDays(from,-1)) : 0;
+  const budget = (spendable()-before) / (daysBetween(from,end)+1) * (daysBetween(from,to)+1);
+  const spent = rangeSpent(from,to);
+  return {w, end, mon, from, to, budget, spent, left: budget-spent, daysLeft: daysBetween(today,to)+1};
+}
 
 // ---------- render ----------
+function entryList(list, today){
+  const frag=document.createDocumentFragment();
+  list.forEach(e=>{
+    const li=document.createElement("li"); li.className="entry";
+    const what=document.createElement("div"); what.className="what";
+    const t=document.createElement("div"); t.textContent=isRd(e) ? "Tarjeta RD" : (catById[e.cat]||{name:"Otro"}).name;
+    what.appendChild(t);
+    if(e.note){ const n=document.createElement("small"); n.textContent=e.note; what.appendChild(n); }
+    const a=document.createElement("span"); a.className="amt num"; a.textContent=isRd(e) ? (e.cur==="DOP" ? pesos(e.orig) : money(e.orig)+" · "+pesos(e.dop)) : money(e.amount);
+    li.append(what,a);
+    if(pendingDelete===e.id){
+      const c=document.createElement("div"); c.className="confirm";
+      c.innerHTML='<button class="btn danger small" type="button">Borrar</button><button class="btn ghost small" type="button">No</button>';
+      c.children[0].onclick=()=>{ pendingDelete=null; store&&store.del(e.id); };
+      c.children[1].onclick=()=>{ pendingDelete=null; render(); };
+      li.appendChild(c);
+    } else {
+      const x=document.createElement("button"); x.className="x"; x.type="button"; x.setAttribute("aria-label","Borrar este gasto"); x.textContent="✕";
+      x.onclick=()=>{ pendingDelete=e.id; render(); };
+      li.appendChild(x);
+    }
+    frag.appendChild(li);
+  });
+  return frag;
+}
+const byNewest = (a,b)=> b.date.localeCompare(a.date) || (b.ts||0)-(a.ts||0);
+
 function render(){
-  const today = todayStr(), w = cycleStart(today), end = cycleEnd(w);
+  const today = todayStr(), wk = weekInfo(today), w = wk.w, end = wk.end;
   $("weekLabel").textContent = nice(w)+" – "+nice(end);
   const avail = spendable(), spent = cycleSpent(w), left = avail - spent;
   const leftEl = $("left"); leftEl.textContent = money(left); leftEl.classList.toggle("neg", left<0);
@@ -348,23 +555,27 @@ function render(){
   $("spentTxt").textContent = "Gastado: "+money(spent)+" de "+money(avail);
   const saved = totalSaved(w);
   $("carryTxt").innerHTML = '<span class="save-pill">Ahorro: '+money(plan.savings)+' apartado este mes'+(pastCycles(w).length?' · '+money(saved)+' ahorrado en total':'')+'</span>';
-  const daysLeft = Math.round((parse(end)-parse(today))/864e5)+1;
-  $("perDay").textContent = left>0 ? "≈ "+money(left/daysLeft)+" por día ("+daysLeft+(daysLeft===1?" día":" días")+" hasta el "+nice(end)+")" : left<0 ? "Te pasaste este mes" : "";
+  const daysLeft = daysBetween(today,end)+1;
+  const wl = $("weekLine");
+  const weekRange = "Semana del "+nice(wk.from)+" al "+nice(wk.to);
+  if(wk.left>=0){
+    wl.innerHTML = 'Esta semana te quedan '+money(wk.left)+'<small></small>';
+    wl.lastChild.textContent = weekRange+" · ≈ "+money(wk.left/wk.daysLeft)+" por día";
+  } else {
+    wl.innerHTML = 'Esta semana te pasaste por '+money(-wk.left)+'<small></small>';
+    wl.lastChild.textContent = weekRange+(left>0 ? " · Para el resto del mes: ≈ "+money(left/daysLeft)+" por día" : "");
+  }
   CATS.forEach(c=>{ const el=document.querySelector("#cat-"+c.id+" small"); if(el) el.textContent=money(catBudget(c))+" / mes"; });
   $("planHelp").textContent = "Puedes gastar "+money(avail)+" al mes. Lo que te sobre al final también se va a tu ahorro.";
+  $("foot").textContent = "Tu mes va del "+plan.cycleDay+" al "+parse(end).getDate()+" del mes siguiente. Lo que te sobre al final del mes se suma a tu ahorro.";
 
-  // tarjeta RD
-  const rdLeftN = rd.balance - rdSpent(), rl=$("rdLeft");
-  rl.textContent = "Te quedan "+pesos(rdLeftN); rl.classList.toggle("neg", rdLeftN<0);
-  $("rdSub").textContent = "≈ "+money(rdLeftN/(rd.rate||62))+" · Gastado: "+pesos(rdSpent())+" de "+pesos(rd.balance);
-  if(!(document.activeElement && /^rd/.test(document.activeElement.id))){ $("rdBalance").value=rd.balance; $("rdRate").value=rd.rate; }
-
-  // today
+  // hoy
   const has = loggedOn(today), s = streak();
   const msg = $("todayMsg"), act = $("todayAction");
   const st = s>0 ? "Racha: "+s+(s===1?" día":" días")+" anotando seguido" : "Anota algo hoy para empezar tu racha";
+  const todays = expenses.filter(e=>e.date===today).sort(byNewest);
   if(has){
-    const n = expenses.filter(e=>e.date===today).length;
+    const n = todays.length;
     msg.firstChild.textContent = n ? "Listo, hoy anotaste "+n+(n===1?" gasto":" gastos")+"." : "Listo, hoy no gastaste nada.";
     act.innerHTML = marks[today] && !n ? '<button class="btn ghost small" id="undoNo" type="button">Deshacer</button>' : '<span class="chip-ok">Hoy ✓</span>';
     const u=$("undoNo"); if(u) u.onclick=()=>store&&store.unmark(today);
@@ -374,8 +585,71 @@ function render(){
     $("noSpend").onclick=()=>store&&store.mark(today);
   }
   $("streak").textContent = st;
+  const tl=$("todayList"); tl.innerHTML="";
+  if(!todays.length){ tl.innerHTML='<p class="empty">Hoy todavía no has anotado nada.</p>'; }
+  else{
+    const sec=document.createElement("div"); sec.className="day";
+    const tot=todays.filter(e=>!isRd(e)).reduce((a,e)=>a+e.amount,0);
+    sec.innerHTML='<h3><span>Total de hoy</span><span class="num">'+money(tot)+'</span></h3><ul></ul>';
+    sec.querySelector("ul").appendChild(entryList(todays, today)); tl.appendChild(sec);
+  }
 
-  // categories
+  renderResumen(today, wk);
+  renderGoals(today);
+  renderRd(today);
+  shareState(today, wk, left, has);
+}
+
+function renderResumen(today, wk){
+  const w = wk.w, end = wk.end;
+  // tu semana
+  const prevFrom = addDays(wk.mon,-7), prevTo = addDays(wk.mon,-1), prev = rangeSpent(prevFrom, prevTo);
+  const inWeek = budgetExp().filter(e=>e.date>=wk.from && e.date<=wk.to);
+  const byCat = {}; inWeek.forEach(e=>{ byCat[e.cat]=(byCat[e.cat]||0)+e.amount; });
+  const top = Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a])[0];
+  let logged=0, passed=0; for(let d=wk.from; d<=today && d<=wk.to; d=addDays(d,1)){ passed++; if(loggedOn(d)) logged++; }
+  const hadPrev = expenses.some(e=>e.date<=prevTo);
+  const diff = wk.spent - prev;
+  const tiles = [
+    ["Gastaste", money(wk.spent), "de "+money(Math.max(0,wk.budget))+" para la semana"],
+    [wk.left>=0?"Te quedan":"Te pasaste por", money(Math.abs(wk.left)), wk.daysLeft+(wk.daysLeft===1?" día":" días")+" para que termine"],
+    ["En lo que más gastaste", top ? (catById[top]||{name:"Otro"}).name : "Nada todavía", top ? money(byCat[top]) : "", true],
+    ["Días anotados", logged+" de "+passed, logged===passed ? "¡Vas perfecto!" : "Te "+(passed-logged===1?"falta 1 día":"faltan "+(passed-logged)+" días")],
+  ];
+  const box=$("weekTiles"); box.innerHTML="";
+  tiles.forEach(t=>{ const d=document.createElement("div"); d.className="tile";
+    d.innerHTML='<div class="k"></div><div class="v num'+(t[3]?" small":"")+'"></div><div class="d num"></div>';
+    d.children[0].textContent=t[0]; d.children[1].textContent=t[1]; d.children[2].textContent=t[2]; box.appendChild(d); });
+  $("weekTitle").textContent = "Tu semana ("+nice(wk.from)+" – "+nice(wk.to)+")";
+  $("weekNote").textContent = !hadPrev ? "" : diff>0.005 ? "Llevas "+money(diff)+" más que toda la semana pasada ("+money(prev)+")." : "La semana pasada gastaste "+money(prev)+"; vas "+money(-diff)+" por debajo.";
+
+  // gráfica
+  let bars=[];
+  if(chartMode==="week"){
+    for(let i=0;i<7;i++){ const d=addDays(wk.mon,i), dd=parse(d);
+      bars.push({key:d, lbl:DAY1[dd.getDay()]+"\n"+dd.getDate(), v:rangeSpent(d,d), name:(d===today?"Hoy":DAYS[dd.getDay()]+" "+nice(d)), cur:d===today}); }
+  } else {
+    for(let a=w; a<=end; ){ const sun=addDays(mondayOf(a),6), b=sun>end?end:sun;
+      bars.push({key:a, lbl:parse(a).getDate()+"–"+parse(b).getDate()+"\n"+MONTHS[parse(b).getMonth()], v:rangeSpent(a,b), name:"Semana del "+nice(a)+" al "+nice(b), cur:today>=a&&today<=b});
+      a=addDays(b,1); }
+  }
+  if(!bars.some(b=>b.key===chartSel)) chartSel=(bars.find(b=>b.cur)||bars[0]).key;
+  const max=Math.max(1,...bars.map(b=>b.v)), ch=$("chart"); ch.innerHTML="";
+  bars.forEach(b=>{
+    const el=document.createElement("button"); el.type="button"; el.setAttribute("aria-pressed", b.key===chartSel?"true":"false");
+    el.setAttribute("aria-label", b.name+": "+money(b.v));
+    el.innerHTML='<span class="plot"><i style="height:'+(b.v>0?Math.max(3,b.v/max*100):0)+'%"></i></span><span class="lbl num"></span>';
+    el.lastChild.innerText=b.lbl; el.lastChild.style.whiteSpace="pre-line";
+    el.onclick=()=>{ chartSel=b.key; render(); };
+    ch.appendChild(el);
+  });
+  const sel=bars.find(b=>b.key===chartSel), total=bars.reduce((a,b)=>a+b.v,0);
+  $("chartRead").innerHTML='<b></b> <span></span>';
+  $("chartRead").firstChild.textContent=sel.name+": "+money(sel.v);
+  $("chartRead").lastChild.textContent="· Total "+money(total);
+  $("chartSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.chart===chartMode?"true":"false"));
+
+  // categorías
   const ul = $("catList"); ul.innerHTML="";
   CATS.forEach(c=>{
     const sp = budgetExp().filter(e=>e.cat===c.id && e.date>=w && e.date<=end).reduce((a,e)=>a+e.amount,0);
@@ -385,41 +659,20 @@ function render(){
     li.querySelector(".name").textContent=c.name; ul.appendChild(li);
   });
 
-  // log
-  const box = $("days"); box.innerHTML="";
-  const wk = expenses.filter(e=>e.date>=w && e.date<=end).sort((a,b)=> b.date.localeCompare(a.date) || (b.ts||0)-(a.ts||0));
-  if(!wk.length){ box.innerHTML='<p class="empty">Todavía no hay gastos este mes. Anota el primero arriba: el monto, la categoría y listo.</p>'; }
-  const byDay = {}; wk.forEach(e=>{ (byDay[e.date]=byDay[e.date]||[]).push(e); });
+  // gastos del mes
+  const box2 = $("days"); box2.innerHTML="";
+  const all = expenses.filter(e=>e.date>=w && e.date<=end).sort(byNewest);
+  if(!all.length){ box2.innerHTML='<p class="empty">Todavía no hay gastos este mes. Anota el primero en la pestaña Hoy.</p>'; }
+  const byDay = {}; all.forEach(e=>{ (byDay[e.date]=byDay[e.date]||[]).push(e); });
   Object.keys(byDay).sort().reverse().forEach(d=>{
     const sec=document.createElement("div"); sec.className="day";
     const tot=byDay[d].filter(e=>!isRd(e)).reduce((a,e)=>a+e.amount,0), dd=parse(d);
     sec.innerHTML='<h3><span>'+(d===today?"Hoy":DAYS[dd.getDay()]+" "+nice(d))+'</span><span class="num">'+money(tot)+'</span></h3><ul></ul>';
-    const list=sec.querySelector("ul");
-    byDay[d].forEach(e=>{
-      const li=document.createElement("li"); li.className="entry";
-      const what=document.createElement("div"); what.className="what";
-      const t=document.createElement("div"); t.textContent=isRd(e) ? "Tarjeta RD" : (catById[e.cat]||{name:"Otro"}).name;
-      what.appendChild(t);
-      if(e.note){ const n=document.createElement("small"); n.textContent=e.note; what.appendChild(n); }
-      const a=document.createElement("span"); a.className="amt num"; a.textContent=isRd(e) ? (e.cur==="DOP" ? pesos(e.orig) : money(e.orig)+" · "+pesos(e.dop)) : money(e.amount);
-      li.append(what,a);
-      if(pendingDelete===e.id){
-        const c=document.createElement("div"); c.className="confirm";
-        c.innerHTML='<button class="btn danger small" type="button">Borrar</button><button class="btn ghost small" type="button">No</button>';
-        c.children[0].onclick=()=>{ pendingDelete=null; store&&store.del(e.id); };
-        c.children[1].onclick=()=>{ pendingDelete=null; render(); };
-        li.appendChild(c);
-      } else {
-        const x=document.createElement("button"); x.className="x"; x.type="button"; x.setAttribute("aria-label","Borrar este gasto"); x.textContent="✕";
-        x.onclick=()=>{ pendingDelete=e.id; render(); };
-        li.appendChild(x);
-      }
-      list.appendChild(li);
-    });
-    box.appendChild(sec);
+    sec.querySelector("ul").appendChild(entryList(byDay[d], today));
+    box2.appendChild(sec);
   });
 
-  // history
+  // meses anteriores
   const hb=$("histBody"); hb.innerHTML="";
   const past = pastCycles(w);
   if(!past.length){ hb.innerHTML='<p class="empty">Aquí vas a ver cada mes terminado: cuánto gastaste y cuánto ahorraste. El primero aparece el '+nice(nextCycle(w))+'.</p>'; }
@@ -431,16 +684,105 @@ function render(){
   }
 }
 
-// ---------- form ----------
+// ---------- metas ----------
+function renderGoals(today){
+  const box=$("goalList");
+  if(box.contains(document.activeElement) && document.activeElement.tagName==="INPUT") return; // no borrar lo que está escribiendo
+  box.innerHTML="";
+  if(!goals.length){ box.innerHTML='<p class="empty">Todavía no tienes metas. Crea la primera abajo y ve sumando lo que vayas apartando.</p>'; return; }
+  goals.forEach(g=>{
+    const el=document.createElement("div"); el.className="goal";
+    const saved=g.saved||0, miss=Math.max(0,g.target-saved), pct=g.target>0?Math.min(100,saved/g.target*100):0, done=saved>=g.target;
+    let hint;
+    if(done) hint="¡Meta lograda! 🎉";
+    else{
+      hint="Te faltan "+money(miss)+".";
+      if(isDate(g.due)){
+        const dl=daysBetween(today,g.due);
+        hint += dl<0 ? " La fecha ("+nice(g.due)+") ya pasó." : dl<7 ? " Es para el "+nice(g.due)+" ("+(dl===0?"hoy":dl===1?"mañana":"en "+dl+" días")+")." : " Aparta ≈ "+money(miss/Math.ceil(dl/7))+" por semana para llegar al "+nice(g.due)+".";
+      }
+    }
+    el.innerHTML='<div class="goal-head"><b></b><span class="vals num"></span></div><div class="bar"><i class="'+(done?"done":"")+'" style="width:'+pct+'%"></i></div><p class="help num"></p>'+
+      '<div class="goal-add"><input inputmode="decimal" placeholder="Monto" aria-label="Monto para sumar o quitar"><button class="btn ghost" type="button">Sumar</button><button class="btn ghost small" type="button">Quitar</button><button class="x" type="button" aria-label="Borrar esta meta">✕</button></div><p class="form-msg" role="status"></p>';
+    el.querySelector("b").textContent=g.name;
+    el.querySelector(".vals").textContent=money0(saved)+" de "+money0(g.target)+" · "+Math.round(pct)+"%";
+    el.querySelector(".help").textContent=hint;
+    const inp=el.querySelector("input"), bs=el.querySelectorAll("button"), fm=el.querySelector(".form-msg");
+    const change=sign=>{ const v=num(inp.value); if(!(v>0)){ fm.className="form-msg err"; fm.textContent="Escribe el monto primero."; inp.focus(); return; }
+      inp.blur(); store.setGoals(goals.map(x=>x.id===g.id?Object.assign({},x,{saved:Math.max(0,Math.round(((x.saved||0)+sign*v)*100)/100)}):x)); };
+    bs[0].onclick=()=>change(1); bs[1].onclick=()=>change(-1);
+    if(pendingGoalDelete===g.id){
+      fm.className="form-msg"; fm.innerHTML='¿Borrar esta meta? <button class="btn danger small" type="button">Borrar</button> <button class="btn ghost small" type="button">No</button>';
+      fm.children[0].onclick=()=>{ pendingGoalDelete=null; store.setGoals(goals.filter(x=>x.id!==g.id)); };
+      fm.children[1].onclick=()=>{ pendingGoalDelete=null; render(); };
+    }
+    bs[2].onclick=()=>{ inp.blur(); pendingGoalDelete=g.id; render(); };
+    box.appendChild(el);
+  });
+}
+$("goalSuggest").onclick=()=>{ $("goalName").value="Ropa para diciembre"; if(!$("goalTarget").value) $("goalTarget").value="150"; $("goalTarget").focus(); };
+$("goalSave").onclick=async()=>{
+  const name=$("goalName").value.trim(), target=num($("goalTarget").value), due=$("goalDue").value, msg=$("goalMsg"); msg.className="form-msg";
+  if(!name || !(target>0)){ msg.className="form-msg err"; msg.textContent="Ponle un nombre y cuánto necesitas."; return; }
+  await store.setGoals(goals.concat([{id:newId("m"), name, target, saved:0, due:isDate(due)?due:""}]));
+  $("goalName").value=""; $("goalTarget").value=""; $("goalDue").value="";
+  msg.textContent="Meta creada: "+name+". Súmale arriba cada vez que apartes dinero.";
+};
+
+// ---------- viaje RD ----------
+function renderRd(today){
+  const rdLeftN = rd.balance - rdSpent(), rl=$("rdLeft"), rate=rd.rate||62;
+  rl.textContent = "Te quedan "+pesos(rdLeftN); rl.classList.toggle("neg", rdLeftN<0);
+  $("rdSub").textContent = "≈ "+money(rdLeftN/rate)+" · Gastado: "+pesos(rdSpent())+" de "+pesos(rd.balance);
+  const act=document.activeElement, aid=act&&act.id||"";
+  if(!/^rd/.test(aid)){ $("rdBalance").value=rd.balance; $("rdRate").value=rd.rate; }
+  if(!/^trip/.test(aid)){ $("tripStart").value=trip.start||""; $("tripEnd").value=trip.end||""; }
+  const big=$("tripBig"), sub=$("tripSub");
+  if(isDate(trip.start) && isDate(trip.end) && trip.end>=trip.start){
+    const n=daysBetween(trip.start,trip.end)+1, until=daysBetween(today,trip.start);
+    const rem = today>trip.end ? 0 : today>trip.start ? daysBetween(today,trip.end)+1 : n;
+    if(today>trip.end){ big.textContent="Ya volviste de RD"; sub.textContent="Te sobraron "+pesos(rdLeftN)+" en la tarjeta."; }
+    else{
+      big.textContent = pesos(Math.max(0,rdLeftN)/rem)+" por día";
+      sub.textContent = (until>0 ? "Faltan "+until+(until===1?" día":" días")+" para el viaje. " : "¡Ya estás en RD! Te quedan "+rem+(rem===1?" día. ":" días. "))+
+        "Tienes "+pesos(rdLeftN)+" para "+rem+(rem===1?" día":" días")+" ("+nice(trip.start)+" – "+nice(trip.end)+"), o sea ≈ "+money(Math.max(0,rdLeftN)/rem/rate)+" diarios.";
+    }
+  } else { big.textContent="Planea tu viaje"; sub.textContent="Pon las fechas y te digo cuántos pesos puedes gastar por día con lo que tienes en la Tarjeta RD ("+pesos(rdLeftN)+")."; }
+  $("convHelp").textContent="Con la tasa de tu tarjeta: US$1 = RD$"+rate+".";
+}
+$("tripSave").onclick=async()=>{
+  const a=$("tripStart").value, b=$("tripEnd").value, msg=$("tripMsg"); msg.className="form-msg";
+  if(!isDate(a) || !isDate(b) || b<a){ msg.className="form-msg err"; msg.textContent="Revisa las fechas: el regreso va después de la llegada."; return; }
+  document.activeElement && document.activeElement.blur();
+  await store.setTrip({start:a, end:b}); msg.textContent="Fechas guardadas.";
+};
+$("convUsd").addEventListener("input",()=>{ const v=num($("convUsd").value); $("convDop").value = v>=0 ? Math.round(v*(rd.rate||62)) : ""; });
+$("convDop").addEventListener("input",()=>{ const v=num($("convDop").value); $("convUsd").value = v>=0 ? (v/(rd.rate||62)).toFixed(2) : ""; });
+
+// ---------- pestañas ----------
+const TITLES = {hoy:"Mi mes", resumen:"Resumen", metas:"Metas", rd:"Viaje RD", ajustes:"Ajustes"};
+function showTab(t){
+  if(!TITLES[t]) t="hoy";
+  Object.keys(TITLES).forEach(k=>{ $("view-"+k).hidden = k!==t; });
+  document.querySelectorAll(".tabbar button").forEach(b=>{ if(b.dataset.tab===t) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  $("viewTitle").textContent=TITLES[t];
+  window.scrollTo(0,0);
+}
+document.querySelectorAll(".tabbar button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+$("chartSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{ chartMode=b.dataset.chart; chartSel=null; render(); });
+
+// ---------- anotar ----------
 const catsBox=$("cats");
 CATS.forEach(c=>{
   const b=document.createElement("button"); b.type="button"; b.className="cat"; b.id="cat-"+c.id; b.setAttribute("aria-pressed","false");
   b.innerHTML='<span></span><small class="num"></small>'; b.firstChild.textContent=c.name;
-  b.onclick=()=>{ selectedCat=c.id; catsBox.querySelectorAll(".cat").forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false")); check(); };
+  b.onclick=()=>pickCat(c.id);
   catsBox.appendChild(b);
 });
+function pickCat(id){ selectedCat=id; catsBox.querySelectorAll(".cat").forEach(x=>x.setAttribute("aria-pressed", x.id==="cat-"+id?"true":"false")); check(); }
 $("date").value = todayStr();
-const amountVal = () => { const v=parseFloat(($("amount").value||"").replace(",",".").replace(/[^0-9.]/g,"")); return isFinite(v)?Math.round(v*100)/100:0; };
+const num = v => { const n=parseFloat(String(v).replace(",",".").replace(/[^0-9.]/g,"")); return isFinite(n)?Math.round(n*100)/100:NaN; };
+const amountVal = () => { const v=num($("amount").value||""); return isFinite(v)?v:0; };
 function check(){ $("save").disabled = !(amountVal()>0 && (selectedCat || payMode==="rd")); }
 function setPay(m){
   payMode=m; $("paySeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.pay===m?"true":"false"));
@@ -454,37 +796,66 @@ function setCur(c){
 $("paySeg").querySelectorAll("button").forEach(b=>b.onclick=()=>setPay(b.dataset.pay));
 $("curSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>setCur(b.dataset.cur));
 $("amount").addEventListener("input", check);
+
+// Guarda un gasto y devuelve el texto de confirmación.
+async function addExpense(o){
+  const e={ id:newId("g"), amount:o.amount, cat:o.cat, note:o.note||"", date:o.date||todayStr(), ts:Date.now() };
+  if(o.pay==="rd"){ e.pay="rd"; e.cat="rd"; e.cur=o.cur||"USD"; e.orig=o.amount; e.dop = e.cur==="DOP" ? o.amount : Math.round(o.amount*rd.rate*100)/100; e.amount = Math.round(e.dop/rd.rate*100)/100; }
+  if(startCycle && e.date<startCycle) await store.setStart(cycleStart(e.date));
+  await store.add(e);
+  if(e.pay==="rd") return "Guardado en Tarjeta RD: "+(e.cur==="DOP"?pesos(e.dop):money(e.orig)+" ("+pesos(e.dop)+")")+". Te quedan "+pesos(rd.balance-rdSpent())+".";
+  const wk=weekInfo(todayStr());
+  return "Guardado: "+money(e.amount)+" en "+catById[e.cat].name+". "+(wk.left>=0 ? "Te quedan "+money(wk.left)+" esta semana." : "Te pasaste por "+money(-wk.left)+" esta semana.");
+}
 $("addForm").addEventListener("submit", async ev=>{
   ev.preventDefault();
   const amount=amountVal(); if(!(amount>0)||!(selectedCat||payMode==="rd")||!store) return;
-  const date=$("date").value||todayStr();
-  const e={ id:"g"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), amount, cat:selectedCat, note:$("note").value.trim(), date, ts:Date.now() };
-  if(payMode==="rd"){ e.pay="rd"; e.cat="rd"; e.cur=curMode; e.orig=amount; e.dop = curMode==="DOP" ? amount : Math.round(amount*rd.rate*100)/100; e.amount = Math.round(e.dop/rd.rate*100)/100; }
   const fm=$("formMsg"); fm.className="form-msg";
   $("save").disabled=true;
   try{
-    if(startCycle && date<startCycle) await store.setStart(cycleStart(date));
-    await store.add(e);
-    fm.textContent = e.pay==="rd" ? "Guardado en Tarjeta RD: "+(e.cur==="DOP"?pesos(e.dop):money(e.orig)+" ("+pesos(e.dop)+")")+". Te quedan "+pesos(rd.balance-rdSpent())+"." : "Guardado: "+money(amount)+" en "+catById[selectedCat].name+".";
+    fm.textContent = await addExpense({amount, cat:selectedCat, note:$("note").value.trim(), date:$("date").value, pay:payMode, cur:curMode});
     $("amount").value=""; $("note").value=""; $("date").value=todayStr();
     selectedCat=null; catsBox.querySelectorAll(".cat").forEach(x=>x.setAttribute("aria-pressed","false")); setPay("normal");
   }catch(err){
-    fm.className="form-msg err"; fm.textContent="No se guardó. Revisa tu conexión y toca Guardar otra vez.";
+    fm.className="form-msg err"; fm.textContent="No se guardó. Toca Guardar otra vez.";
   }
   check();
 });
 
+// "uber 12" -> {amount:12, cat:"uber", note:"uber"}
+const plain = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+function parseQuick(text){
+  const m = text.match(/(\d+(?:[.,]\d{1,2})?)/); if(!m) return null;
+  const amount = num(m[1]); if(!(amount>0)) return null;
+  const p = plain(text);
+  const isPesos = /\bpesos?\b|rd\$|\bdop\b/.test(p);
+  const note = text.replace(m[1],"").replace(/rd\$|\$|\bpesos?\b|\bdop\b|\bd[oó]lares?\b|\busd\b/gi,"").replace(/\s+/g," ").trim().slice(0,60);
+  let cat=null;
+  for(const id of Object.keys(WORDS)){ if(WORDS[id].some(k=>new RegExp("(^|[^a-z])"+k).test(p))){ cat=id; break; } }
+  return {amount, note, cat, pay:isPesos?"rd":"normal", cur:isPesos?"DOP":"USD"};
+}
+$("quickForm").addEventListener("submit", async ev=>{
+  ev.preventDefault();
+  const q=$("quick"), msg=$("quickMsg"), r=parseQuick(q.value); msg.className="form-msg";
+  if(!r){ msg.className="form-msg err"; msg.textContent="Escribe en qué y cuánto, por ejemplo: uber 12"; return; }
+  if(r.pay!=="rd" && !r.cat){
+    $("amount").value=r.amount; $("note").value=r.note; setPay("normal"); selectedCat=null; pickCat(null); q.value="";
+    msg.textContent="No supe la categoría de “"+r.note+"”. Elígela aquí abajo y toca Guardar.";
+    return;
+  }
+  try{ msg.textContent = await addExpense(r); q.value=""; q.blur(); }
+  catch(e){ msg.className="form-msg err"; msg.textContent="No se guardó. Inténtalo otra vez."; }
+});
+
 // ---------- mi plan ----------
 function fillPlan(){ if(document.activeElement && /^plan/.test(document.activeElement.id)) return; $("planMonthly").value=plan.monthly; $("planSavings").value=plan.savings; }
-const num = v => { const n=parseFloat(String(v).replace(",",".").replace(/[^0-9.]/g,"")); return isFinite(n)?Math.round(n*100)/100:NaN; };
 $("planSave").onclick = async ()=>{
   const mo=num($("planMonthly").value), sv=num($("planSavings").value), msg=$("planMsg"); msg.className="form-msg";
   if(!(mo>0) || !(sv>=0) || sv>mo){ msg.className="form-msg err"; msg.textContent="Revisa los números: el ahorro no puede ser más de lo que te dan."; return; }
   try{ await store.setPlan(Object.assign({}, plan, {monthly:mo, savings:sv})); msg.textContent="Plan guardado: "+money(mo-sv)+" para gastar y "+money(sv)+" para ahorrar."; }
-  catch(e){ msg.className="form-msg err"; msg.textContent="No se guardó. Revisa tu conexión e intenta otra vez."; }
+  catch(e){ msg.className="form-msg err"; msg.textContent="No se guardó. Intenta otra vez."; }
 };
-fillPlan();
-$("goPlan").onclick = ()=>{ $("planCard").scrollIntoView({behavior:"smooth", block:"start"}); setTimeout(()=>$("planMonthly").focus({preventScroll:true}), 400); };
+$("goPlan").onclick = ()=>{ showTab("ajustes"); fillPlan(); $("planMonthly").focus(); };
 $("rdSave").onclick = async ()=>{
   const b=num($("rdBalance").value), t=num($("rdRate").value), msg=$("rdMsg"); msg.className="form-msg";
   if(!(b>=0) || !(t>0)){ msg.className="form-msg err"; msg.textContent="Revisa los números de la tarjeta."; return; }
@@ -495,6 +866,14 @@ $("rdSave").onclick = async ()=>{
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ if($("date").value<todayStr() && !$("amount").value) $("date").value=todayStr(); render(); } });
 
 // ---------- avisos (web push) ----------
+// Deja un resumen donde el aviso lo puede leer, para que diga cuánto te queda esta semana.
+let lastShared="";
+function shareState(today, wk, monthLeft, logged){
+  if(!("caches" in window)) return;
+  const body = JSON.stringify({date:today, logged, weekLeft:Math.round(wk.left*100)/100, weekEnd:wk.to, monthLeft:Math.round(monthLeft*100)/100, cycleEnd:wk.end});
+  if(body===lastShared) return; lastShared=body;
+  caches.open("misgastos-estado").then(c=>c.put("estado.json", new Response(body,{headers:{"Content-Type":"application/json"}}))).catch(()=>{});
+}
 const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 function b64ToBytes(b64){ const p="=".repeat((4-b64.length%4)%4); const s=atob((b64+p).replace(/-/g,"+").replace(/_/g,"/")); return Uint8Array.from(s,c=>c.charCodeAt(0)); }
 function showCode(sub){
@@ -533,21 +912,22 @@ async function setupNotif(){
 $("copyCode").onclick = async ()=>{ const t=$("notifCode"); try{ await navigator.clipboard.writeText(t.value); $("copyCode").textContent="Copiado ✓"; }catch(e){ t.select(); } };
 
 // ---------- copia de seguridad ----------
-$("backup").addEventListener("toggle", ()=>{ if($("backup").open) $("backupText").value = JSON.stringify({expenses, marks, startCycle, plan, rd}); });
-$("backupCopy").onclick = async ()=>{ const t=$("backupText"); t.value=JSON.stringify({expenses, marks, startCycle, plan, rd}); try{ await navigator.clipboard.writeText(t.value); $("backupMsg").textContent="Copiado. Pégalo en Notas para guardarlo."; }catch(e){ t.select(); $("backupMsg").textContent="Selecciona el texto y cópialo."; } };
+$("backup").addEventListener("toggle", ()=>{ if($("backup").open) $("backupText").value = JSON.stringify(snapshot()); });
+$("backupCopy").onclick = async ()=>{ const t=$("backupText"); t.value=JSON.stringify(snapshot()); try{ await navigator.clipboard.writeText(t.value); $("backupMsg").textContent="Copiado. Pégalo en Notas para guardarlo."; }catch(e){ t.select(); $("backupMsg").textContent="Selecciona el texto y cópialo."; } };
 let restoreArmed=false;
 $("backupRestore").onclick = ()=>{
   const m=$("backupMsg"); m.className="form-msg";
   let j; try{ j=JSON.parse($("backupText").value); }catch(e){ m.className="form-msg err"; m.textContent="Ese texto no es una copia válida."; return; }
   if(!j || !Array.isArray(j.expenses)){ m.className="form-msg err"; m.textContent="Ese texto no es una copia válida."; return; }
   if(!restoreArmed){ restoreArmed=true; m.textContent="Esto reemplaza tus datos actuales con "+j.expenses.length+" gastos. Toca Restaurar otra vez para confirmar."; return; }
-  restoreArmed=false; expenses=j.expenses; marks=j.marks||{}; startCycle=j.startCycle||cycleStart(todayStr()); if(j.plan) plan=Object.assign({},plan,j.plan); if(j.rd) rd=Object.assign({},rd,j.rd); fillPlan(); localSave(); render(); m.textContent="Datos restaurados.";
+  restoreArmed=false; applyData(j); fillPlan(); localSave(); render(); m.textContent="Datos restaurados.";
 };
 
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
 setupNotif();
 try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 boot();
+fillPlan();
 })();
 </script>
 </body>
