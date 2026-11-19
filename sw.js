@@ -1,5 +1,5 @@
 // Mis gastos: funciona sin internet y muestra los avisos.
-const CACHE = "misgastos-v3";
+const CACHE = "misgastos-v4";
 const ESTADO = "misgastos-estado";   // resumen que deja la app para los avisos
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"];
 

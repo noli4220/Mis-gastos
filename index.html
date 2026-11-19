@@ -450,7 +450,8 @@ let store = null;
 // ---------- storage: this phone ----------
 const LS = "misgastos-v1";
 const VAPID = "BLKz40ZpguoSS0fhlZ4-dz7jv5cRsXU1eGl0Igp0-mr39u2MfEzMXl3AXlE87CUdW7pNvsz2YBtXBw6e-Ki7RX0";
-const snapshot = () => ({expenses, marks, startCycle, plan, rd, goals, trip});
+let imported = {};  // importaciones del banco ya hechas (para no repetirlas)
+const snapshot = () => ({expenses, marks, startCycle, plan, rd, goals, trip, imported});
 function localLoad(){ try{ const j=JSON.parse(localStorage.getItem(LS)||"{}"); return j&&typeof j==="object"?j:{}; }catch(e){ return {}; } }
 function localSave(){ try{ localStorage.setItem(LS, JSON.stringify(snapshot())); }catch(e){} }
 function applyData(j){
@@ -460,6 +461,7 @@ function applyData(j){
   goals = Array.isArray(j.goals)?j.goals:[];
   trip = Object.assign({start:"", end:""}, j.trip||{});
   startCycle = j.startCycle||cycleStart(todayStr());
+  imported = j.imported||{};
 }
 
 function useLocal(){
@@ -479,7 +481,46 @@ function useLocal(){
     setTrip: async t => { trip=t; commit(); },
   };
   if(!had) localSave();
+  const added = importBank();
   render();
+  if(added) $("formMsg").textContent = added;
+}
+
+// ---------- gastos del banco (19 nov) ----------
+// Se agregan una sola vez. Si ya anotaste un gasto parecido (mismo monto, ±$1, en el mismo día o un día antes/después), no se repite.
+const BANK_NOV19 = [
+  ["2026-11-09",55.83,"gustos","Amazon"],
+  ["2026-11-09",11.87,"campus","Grubhub"],
+  ["2026-11-10",202.34,"gustos","Universal Orlando"],
+  ["2026-11-12",2.75,"campus","Comida USF"],
+  ["2026-11-12",3.48,"campus","Starbucks"],
+  ["2026-11-12",15.79,"campus","Grubhub"],
+  ["2026-11-13",12.29,"campus","Grubhub"],
+  ["2026-11-16",46.62,"campus","Uber Eats"],
+  ["2026-11-16",18.74,"campus","DoorDash"],
+  ["2026-11-16",11.20,"uber","Uber"],
+  ["2026-11-16",19.16,"campus","DoorDash"],
+  ["2026-11-16",33.68,"gustos","Ropa ($150): H&M"],
+  ["2026-11-17",71.58,"gustos","Ropa ($150): Victoria's Secret"],
+  ["2026-11-19",19.04,"campus","Yeung's Lotus"],
+  ["2026-11-19",49.19,"gustos","Ropa ($150): Ross"],
+  ["2026-11-19",10.03,"gustos","Ropa ($150): Shein"],
+  ["2026-11-19",58.29,"gustos","Ropa ($150): Nike"],
+];
+function importBank(){
+  if(imported["banco-nov19"]) return "";
+  const before = expenses.slice(), used = new Set();
+  let n=0, total=0;
+  BANK_NOV19.forEach(([date,amount,cat,note],i)=>{
+    const dup = before.find(e=>!used.has(e.id) && e.pay!=="rd" && Math.abs(e.amount-amount)<=1 && Math.abs(daysBetween(e.date,date))<=1);
+    if(dup){ used.add(dup.id); return; }
+    expenses.push({id:"banco19-"+i, amount, cat, note, date, ts:Date.now()+i});
+    n++; total+=amount;
+  });
+  if(startCycle && expenses.some(e=>e.date<startCycle)) startCycle = cycleStart(expenses.reduce((m,e)=>e.date<m?e.date:m, startCycle));
+  imported["banco-nov19"] = true;
+  localSave();
+  return n ? "Agregué "+n+" gastos de tu banco ("+money(total)+")." : "";
 }
 
 function boot(){ useLocal(); }
