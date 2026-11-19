@@ -209,6 +209,7 @@ body{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
         <span id="spentTxt">Gastado: $0.00 de $330.00</span>
         <span id="carryTxt"></span>
       </div>
+      <div class="sub num" id="bankRow" hidden><span id="bankTxt"></span><button class="edit-link" id="bankEdit" type="button">Actualizar</button></div>
     </section>
 
     <section class="today" aria-live="polite">
@@ -450,8 +451,9 @@ let store = null;
 // ---------- storage: this phone ----------
 const LS = "misgastos-v1";
 const VAPID = "BLKz40ZpguoSS0fhlZ4-dz7jv5cRsXU1eGl0Igp0-mr39u2MfEzMXl3AXlE87CUdW7pNvsz2YBtXBw6e-Ki7RX0";
+let bank = null;     // {balance, since}: lo disponible en el banco y desde cuándo restar gastos
 let imported = {};  // importaciones del banco ya hechas (para no repetirlas)
-const snapshot = () => ({expenses, marks, startCycle, plan, rd, goals, trip, imported});
+const snapshot = () => ({expenses, marks, startCycle, plan, rd, goals, trip, imported, bank});
 function localLoad(){ try{ const j=JSON.parse(localStorage.getItem(LS)||"{}"); return j&&typeof j==="object"?j:{}; }catch(e){ return {}; } }
 function localSave(){ try{ localStorage.setItem(LS, JSON.stringify(snapshot())); }catch(e){} }
 function applyData(j){
@@ -462,6 +464,7 @@ function applyData(j){
   trip = Object.assign({start:"", end:""}, j.trip||{});
   startCycle = j.startCycle||cycleStart(todayStr());
   imported = j.imported||{};
+  bank = j.bank||null;
 }
 
 function useLocal(){
@@ -507,8 +510,19 @@ const BANK_NOV19 = [
   ["2026-11-19",10.03,"gustos","Ropa ($150): Shein"],
   ["2026-11-19",58.29,"gustos","Ropa ($150): Nike"],
 ];
+// Universal y Amazon se pagaron con el Zelle: quedan anotados pero fuera del presupuesto.
+function markExtras(){
+  if(imported["aparte-nov19"]) return;
+  [["2026-11-10",202.34],["2026-11-09",55.83]].forEach(([date,amount])=>{
+    const e = expenses.find(x=>!isRd(x) && !x.extra && Math.abs(x.amount-amount)<=1 && Math.abs(daysBetween(x.date,date))<=1);
+    if(e) e.extra = true;
+  });
+  imported["aparte-nov19"] = true;
+  if(!bank) bank = {balance:143.59, since:expenses.reduce((m,e)=>Math.max(m,e.ts||0), Date.now())};  // disponible en el banco el 19 nov, 3:07 pm
+  localSave();
+}
 function importBank(){
-  if(imported["banco-nov19"]) return "";
+  if(imported["banco-nov19"]){ markExtras(); return ""; }
   const before = expenses.slice(), used = new Set();
   let n=0, total=0;
   BANK_NOV19.forEach(([date,amount,cat,note],i)=>{
@@ -519,6 +533,7 @@ function importBank(){
   });
   if(startCycle && expenses.some(e=>e.date<startCycle)) startCycle = cycleStart(expenses.reduce((m,e)=>e.date<m?e.date:m, startCycle));
   imported["banco-nov19"] = true;
+  markExtras();
   localSave();
   return n ? "Agregué "+n+" gastos de tu banco ("+money(total)+")." : "";
 }
@@ -534,7 +549,8 @@ function catBudget(c){
   return Math.floor(Math.max(0, avail-fixedTotal)*c.w/flexTotal);
 }
 const isRd = e => e.pay==="rd";
-const budgetExp = () => expenses.filter(e=>!isRd(e));
+const isOut = e => isRd(e) || e.extra;  // no cuenta en el presupuesto
+const budgetExp = () => expenses.filter(e=>!isOut(e));
 const pesos = n => (n<0?"-":"")+"RD$"+Math.abs(n).toLocaleString("en-US",{maximumFractionDigits:0});
 function rdSpent(){ return expenses.filter(isRd).reduce((a,e)=>a+(e.dop||0),0); }
 function rangeSpent(a,b){ return budgetExp().filter(e=>e.date>=a && e.date<=b).reduce((s,e)=>s+e.amount,0); }
@@ -564,7 +580,7 @@ function entryList(list, today){
   list.forEach(e=>{
     const li=document.createElement("li"); li.className="entry";
     const what=document.createElement("div"); what.className="what";
-    const t=document.createElement("div"); t.textContent=isRd(e) ? "Tarjeta RD" : (catById[e.cat]||{name:"Otro"}).name;
+    const t=document.createElement("div"); t.textContent=isRd(e) ? "Tarjeta RD" : e.extra ? "Aparte (no cuenta en el presupuesto)" : (catById[e.cat]||{name:"Otro"}).name;
     what.appendChild(t);
     if(e.note){ const n=document.createElement("small"); n.textContent=e.note; what.appendChild(n); }
     const a=document.createElement("span"); a.className="amt num"; a.textContent=isRd(e) ? (e.cur==="DOP" ? pesos(e.orig) : money(e.orig)+" · "+pesos(e.dop)) : money(e.amount);
@@ -594,6 +610,8 @@ function render(){
   const pct = avail>0 ? Math.min(100, spent/avail*100) : 100;
   const m = $("meter"); m.style.width = pct+"%"; m.classList.toggle("over", spent>avail);
   $("spentTxt").textContent = "Gastado: "+money(spent)+" de "+money(avail);
+  $("bankRow").hidden = !bank;
+  if(bank){ const b = bank.balance - expenses.filter(e=>!isRd(e) && e.ts>bank.since).reduce((a,e)=>a+e.amount,0); $("bankTxt").textContent = "En tu banco: ≈ "+money(b); }
   const saved = totalSaved(w);
   $("carryTxt").innerHTML = '<span class="save-pill">Ahorro: '+money(plan.savings)+' apartado este mes'+(pastCycles(w).length?' · '+money(saved)+' ahorrado en total':'')+'</span>';
   const daysLeft = daysBetween(today,end)+1;
@@ -630,7 +648,7 @@ function render(){
   if(!todays.length){ tl.innerHTML='<p class="empty">Hoy todavía no has anotado nada.</p>'; }
   else{
     const sec=document.createElement("div"); sec.className="day";
-    const tot=todays.filter(e=>!isRd(e)).reduce((a,e)=>a+e.amount,0);
+    const tot=todays.filter(e=>!isOut(e)).reduce((a,e)=>a+e.amount,0);
     sec.innerHTML='<h3><span>Total de hoy</span><span class="num">'+money(tot)+'</span></h3><ul></ul>';
     sec.querySelector("ul").appendChild(entryList(todays, today)); tl.appendChild(sec);
   }
@@ -707,7 +725,7 @@ function renderResumen(today, wk){
   const byDay = {}; all.forEach(e=>{ (byDay[e.date]=byDay[e.date]||[]).push(e); });
   Object.keys(byDay).sort().reverse().forEach(d=>{
     const sec=document.createElement("div"); sec.className="day";
-    const tot=byDay[d].filter(e=>!isRd(e)).reduce((a,e)=>a+e.amount,0), dd=parse(d);
+    const tot=byDay[d].filter(e=>!isOut(e)).reduce((a,e)=>a+e.amount,0), dd=parse(d);
     sec.innerHTML='<h3><span>'+(d===today?"Hoy":DAYS[dd.getDay()]+" "+nice(d))+'</span><span class="num">'+money(tot)+'</span></h3><ul></ul>';
     sec.querySelector("ul").appendChild(entryList(byDay[d], today));
     box2.appendChild(sec);
@@ -835,6 +853,12 @@ function setCur(c){
   $("curSign").textContent = c==="DOP" ? "RD$" : "$";
 }
 $("paySeg").querySelectorAll("button").forEach(b=>b.onclick=()=>setPay(b.dataset.pay));
+// Cuando entre dinero o quieras cuadrar con el banco, pon el "Available Balance".
+$("bankEdit").onclick=()=>{
+  const v = prompt("¿Cuánto tienes disponible en el banco ahora?", "");
+  if(v===null) return; const n = parseFloat(String(v).replace(/[$,\s]/g,""));
+  if(!(n>=0)) return; bank = {balance:n, since:Date.now()}; localSave(); render();
+};
 $("curSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>setCur(b.dataset.cur));
 $("amount").addEventListener("input", check);
 
